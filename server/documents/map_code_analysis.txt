@@ -1,0 +1,120 @@
+//file TP_Map.html
+
+//line 30 - 94
+	declare variables
+	following are google fusion tables
+		var myTable = '15f3uWYeGgrBaRI-94NcWQdvc6L53hmIRrkGasji5';  			//Table name is TurnpikeExits_2014-SG-V-TBP -- This is the 2014 Exit Table, Includes New Selmon Exits and Sawgrass AND VETERANS TOLL-BY-PLATE tolls
+		var mySystemsTable = '14bjuzl-uvQDOD8rWyhaKGnMfLBXrwVaeysaKYRo';		//Table name is TurnpikeSystems_2014 -- This is the 2014 System Table, Includes New Selmon Road Sections
+		var mySectionsTable	= '1vq8650PBQIgmbdK6QaENLYnA3hZYDLhQWVOT6VI';		//Table name is TP_Sections_2014
+
+		
+//line 96 - 250
+	configure google maps and layers
+		county layer from fusion table:
+			from: '1WReDlncBRk7SCwXqDX41RzXF4es9NFruI05VT58' // Table name is county_regions
+		https://www.google.com/fusiontables/data?docid=1WReDlncBRk7SCwXqDX41RzXF4es9NFruI05VT58#map:id=3
+		
+//line 251 - 305
+	add two routing layers from table TP_Sectios_2014
+	add whole system layer from table Turnpikesystems_2014
+	add exit layer from table TurnpikeExits_2014-SG-V-TBP
+		
+//line 306 - 360
+	logic for display information when exit is clicked
+	need to extract the information for Toll-By-Plate exits
+		facID: H (all exits)
+		facID: 'SG' (all exits EXCEPT 0, 1A, 1B and 14)
+		facID: 'V' (for exits 4, 6A and 6B)
+	
+//line 366 - 462
+	define some html elements, e.g traffic control button	
+		
+//line 469 - 510
+	fuction setStartPoint(sP, ptLat, ptLng)
+	check if startPoint is valide
+		NOT valid: facid: M, exit: 255,name: Consulate Dr.
+					facid: M, exit: 242, name: Kissimmee-St. Cloud South (U.S. 192 / U.S. 441)
+					(facid: S, exit: P, name: Port to I-4 EB or WB (Trucks Only)
+						if endPoint is (Selmon EB to I-4 EB, Selmon WB to I-4 WB	)
+	then call getStartingExitData(myExitName, myExitMilepost, myFacilityID)
+	then call filterOptions(myFacility);
+	then call calcToll();
+
+//line 512 -  551
+	function setEndPoint(eP,ptLat,ptLng)
+	check if endPoint is valid
+		NOT Valid: 
+		if  ((eP == "Kissimmee-St. Cloud South (U.S. 192 / U.S. 441)") && (startMilePost >  195)) {
+				alert( eP + " is only available as a Northbound Exit. \nPlease select another ending point.");
+			} else if ((eP == "Consulate Dr.")  && (startMilePost <  208.402)) {
+				alert( eP + " is only available as a Southbound Exit. \nPlease select another start or end point."); 
+			} else if ((eP == "Port to I-4 EB or WB (Trucks Only)") && ((startPoint == "Selmon EB to I-4 EB")|| (startPoint == "Selmon WB to I-4 WB"))){
+				alert( eP + " is not available from your current starting point. \nPlease select another start or end point."); 
+			} else if ((eP == "Consulate Dr.")  && (startMilePost <  208.402)) {
+				alert( eP + " is only available as a Southbound Exit. \nPlease select another start or end point."); 
+			} else if (eP == "County Line Rd." ) {
+				alert( eP + " is only available as a Southbound On or Northbound On ramp. \nPlease select another end point.");
+		then call getEndingExitData(myExitName,myExitMilepost,myFacilityID)
+		then call filterOptions(myFacility)
+		then call calcToll();
+
+		
+//line 564 - 1095
+	function filterOptions()
+		determine whether a exit is 'tollByPlate'
+		determine the 'where' clause to query fusion table for all valid 'exits'
+		should try to use function to assemble our own data
+
+//line 1097 - 1107
+	function enableCountyLayerTips()
+	
+//line 1109 - 1150
+	function resetMap()
+	
+//line 	 1152 - 1172
+	function clearRouteDetails(point)	
+	
+//line 1174 - 1196
+	function clearRouteHighlighting()	
+	
+//line 1198 -1226
+	function setMapToSystem(mySystem)
+		set zoom level and center based on region
+				case "Panhandle Bridges": systemZoomLevel=10; systemCenter=new google.maps.LatLng(30.464497,-86.709595); break;
+			  case "Orlando Area": systemZoomLevel=9; systemCenter=new google.maps.LatLng(28.385923,-81.471863); break;
+			  case "Tampa Area": systemZoomLevel=9; systemCenter=new google.maps.LatLng(28.272294,-82.543030); break;
+			  case "Polk Parkway": systemZoomLevel=11; systemCenter=new google.maps.LatLng(28.067578,-81.909943); break;
+			  case "Ticket System": systemZoomLevel=9; systemCenter=new google.maps.LatLng(27.662772,-80.875854); break;
+			  case "South Florida": systemZoomLevel=9; systemCenter=new google.maps.LatLng(26.192369,-80.885065); break; 	
+		based on payment type
+			call filterSunPassOnly(num)
+					num=1 if sunPass
+					num =3 if cash or Toll-by-plate
+		
+//line 1228 - 1331
+	function setShiedls()
+	//shields location is hard-coded
+
+//line 1331 - 1340
+	function calcToll()
+	call filterMyRoute();
+	calculatedToll = calculateToll();
+	displayTollAmount();
+	
+//line 1342 - 1408
+	function displayTollAmount()
+		logic for display toll amount, along with route information (TOLL PLAZA charges)
+		toll info is stored in variable ;calculatedToll'		
+
+	
+
+//line 1410 - 1457
+	function filterSunPassOnly()
+		the following exit are sunPass only, no Cash option
+							  case "Consulate Dr.": 		alert("Exit 255 - Consulate Drive is only available for SunPass customers. \nYour selection of Consulate Dr. has been cleared and the toll amount reset to $0.00 \nPlease select another " + whichPoint + " point."); break;
+						  case "Becker Rd.": 			alert("Exit 138 - Becker Road is only available for SunPass customers. \nYour selection of Becker Rd. has been cleared and the toll amount reset to $0.00 \nPlease select another " + whichPoint + " point."); break;
+						  case "S.R. 710": 				alert("Exit 107 - S.R. 710 is only available for SunPass customers. \nYour selection of S.R. 710 has been cleared and the toll amount reset to $0.00 \nPlease select another " + whichPoint + " point."); break;
+						  case "Jog Rd.": 				alert("Exit 98 - Jog Road is only available for SunPass customers. \nYour selection of Jog Rd. has been cleared and the toll amount reset to $0.00 \nPlease select another " + whichPoint + " point."); break;
+						  case "Kissimmee Park Rd.": 	alert("Exit 240 - Kissimmee Park Road is only available for SunPass customers. \nYour selection of Kissimmee Park Rd. has been cleared and the toll amount reset to $0.00 \nPlease select another " + whichPoint + " point."); break;
+			
+	

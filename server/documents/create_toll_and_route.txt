@@ -1,0 +1,37 @@
+//for toll calculation
+1. we use the existing logic and fusion table to generate the toll for every possible routes
+2. to make it work, we'll have to modify the file jsCalculations2014.js
+    //comment out all Alert statement, just use find/replace in a text editor
+3. create file process_route.js, located in folder 'server/scripts' and include it in TP_Map.html. We also need drop the validEndPoints.json in the root folder:
+    	<script type="text/javascript" language="JavaScript" src="js/process_route.js" ></script>
+
+also copy the file valid_end_points to root directory
+    	
+//for retrieve sectionIDs, the code are comment out since mobile version does not use the sectionIDs yet
+4. we need to modify TP_Map.html, function filterMyRoute() to return the calculated query which is issued to google fusion table to get the sectionsIDs
+	a. add a variable 'routeWhere', in line 1530
+	var routeWhere = {"firstWhere": 'N/A','secondWhere': 'N/A' };
+	b. assign value to 'routeWhere' throughout the code, basically replace:
+		showMyRoute1(whereCon); TO showMyRoute1(whereCon); routeWhere.firstWhere = whereCon;
+		showMyRoute2(whereCon); TO showMyRoute2(whereCon); routeWhere.secondWhere = whereCon;
+	c. return the routeWhere variable, in line 1950
+		return routeWhere;
+
+
+5. load the original toll calculator site
+6. open Chome Developer, select gMapFrame(TP_Map.html) so that we can access to the new functions
+7. at console command, type getAllRoutes()
+8. copy the console output and paste it into file 'routesAndToll_raw.json' located in 'server/data' folder
+Warning: the output file is quite large and takes some time to copy/paste.
+NOTE: it may worthwhile considering using a web service to assemble the JSON file???
+
+9. there're errors on fusion table, and about 1700 routes with empty sectionIDs. copy the data anyway and on server, run process.route.js
+currently we are not dealing with sectionIDs
+10. it turns out about over 3000 routes has sp and cash as 0, can not identify why
+11. on server, run script validateRoute.js to manually add start, end and tollplaza (both sp and cash) to the route cost
+
+
+
+
+
+

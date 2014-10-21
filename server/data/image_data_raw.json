@@ -1,0 +1,28 @@
+{
+    "image_data": [
+            {
+                "image_name": "axle_vehicles",
+                "image_path": "/api/image/axle_vehicles.png"
+            },
+            {
+                "image_name": "florida_highway_patrol",
+                "image_path": "/api/image/fhp.png"
+            },
+            {
+                "image_name": "florida_511",
+                "image_path": "/api/image/fl_511.png"
+            },
+            {
+                "image_name": "florida_turnpike",
+                "image_path": "/api/image/fl_turnpike.png"
+            },
+            {
+                "image_name": "fdot_logo",
+                "image_path": "/api/image/logo.png"
+            },
+            {
+                "image_name": "sunpass_logo",
+                "image_path": "/api/image/sunpass_logo.png"
+            }
+        ]
+}

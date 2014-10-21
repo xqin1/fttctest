@@ -1,0 +1,121 @@
+{"schemaData":
+    {
+        "regions":[
+            {"name": "Orlando Area",
+             "facilities": [
+                 {"name": "Northern Turnpike (SR 91)",
+                  "facilityID": "M",
+                  "description": "bla,bla",
+                  "routeSectionIDs":[143,144,145],
+                  "tollPlazas": [
+                        {"name": "Cypress Creek Toll Plaza",
+                            "description": "bla,bla",
+                         "cashToll": 1.25,
+                         "sunpasToll": 0.75,
+                         "coordinates": {"lat": 21.22, "lon": -81.55},
+                         "milePost": 17.106
+                        },
+                        {"name": "Leesburg Toll Plaza",
+                            "description": "bla,bla",
+                         "cashToll": 2.5,
+                         "sunpasToll": 2.00,
+                         "coordinates": {"lat": 21.22, "lon": -81.55},
+                         "milePost": 241.202
+                        }
+                    ],
+                  "exits":[
+                      {"name": "Skyway Ln",
+                       "exitNum": 16,
+                       "milePost": 16,
+                       "NB_ON": {"sunpass":0.00,"cash":0.00},
+                       "NB_OFF": {"sunpass":0.00, "cash": 0.00},
+                       "SB_ON": {"sunpass":0.00, "cash": 0.00},
+                       "SB_OFF": {"sunpass":0.00, "cash": 0.00},
+                       "coordinates": {"lat": 21.22, "lon": -81.55},
+                       "sunpassOnly": false,
+                       "tickeySystem": false,
+                       "tollByPlate": false
+                      },
+                      { "name": "sunpassOnly exit",
+                        "exitNum": 18,
+                        "milePost": 18,
+                          "NB_ON": {"sunpass":0.00,"cash":999},
+                          "NB_OFF": {"sunpass":0.00, "cash": 999},
+                          "SB_ON": {"sunpass":0.00, "cash": 999},
+                          "SB_OFF": {"sunpass":0.00, "cash": 999},
+                          "coordinates": {"lat": 21.22, "lon": -81.55},
+                        "sunpassOnly": true,
+                        "tickeySystem": false,
+                        "tollByPlate": false
+                      },
+                      { "name": "ticketSystem exit",
+                          "exitNum": 20,
+                          "milePost": 20,
+                          "coordinates": {"lat": 21.22, "lon": -81.55},
+                          "sunpassOnly": false,
+                          "tickeySystem": true,
+                          "tollByPlate": false
+                      },
+                      { "name": "tollByPlate exit",
+                          "exitNum": 22,
+                          "milePost": 22,
+                          "NB_ON": {"sunpass":0.00,"cash":0.00},
+                          "NB_OFF": {"sunpass":0.00, "cash": 0.78},
+                          "SB_ON": {"sunpass":0.00, "cash": 0.78},
+                          "SB_OFF": {"sunpass":0.00, "cash": 0.00},
+                          "coordinates": {"lat": 21.22, "lon": -81.55},
+                          "sunpassOnly": false,
+                          "tickeySystem": false,
+                          "tollByPlate": true
+                      }
+                   ]
+                 }
+             ]
+            }
+        ],
+        "routeSections": [
+            {"sectionID": 141,
+             "name": "Turnpike Mainline",
+             "facilityID": "M",
+             "highNum": 240,
+             "lowNum": 193,
+             "coordinates": [
+                 [22,-81],[22,-81],[22,-81]
+             ]
+            },
+            {"sectionID": 142,
+                "name": "Turnpike Mainline",
+                "facilityID": "M",
+                "highNum": 240,
+                "lowNum": 193,
+                "coordinates": [
+                    [22,-81],[22,-81],[22,-81]
+                ]
+            }
+        ],
+        "metaData":{
+            "lastUpdate": "06/19/2014",
+            "paymentOptions":[
+                {"name":"Sunpass", "description": "bla,bla"},
+                {"name":"Cash", "description": "bla,bla"},
+                {"name":"Toll-By-Plate", "description": "bla,bla"}
+            ],
+            "carType": [
+                {"axleNum": 2, "description": "bla,bla,bla"},
+                {"axleNum": 3, "description": "bla,bla,bla"},
+                {"axleNum": 4, "description": "bla,bla,bla"},
+                {"axleNum": 5, "description": "bla,bla,bla"},
+                {"axleNum": 6, "description": "bla,bla,bla"},
+                {"axleNum": 7, "description": "bla,bla,bla"},
+                {"axleNum": 8, "description": "bla,bla,bla"}
+            ],
+            "floridaTurnpikeHistory": "glory history",
+            "link": [
+                {"name": "FTE Website", "url": "http://goaway"},
+                {"name": "SunPass Website & App", "url": "http://goaway"},
+                {"name": "Florida 511", "url": "http://goaway"},
+                {"name": "FHP", "url": "http://goaway"}
+            ]
+        }
+    }
+}

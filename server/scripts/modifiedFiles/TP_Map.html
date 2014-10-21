@@ -1,0 +1,1899 @@
+<!DOCTYPE html PUBLIC �-//W3C//DTD XHTML 1.0 Transitional//EN� �http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+  <head>
+    <title>Florida Turnpike Toll Calculator Map</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+      html { height: 100% }
+      body { height: 100%; margin: 0; padding: 0 }
+      #map_canvas { height: 50% }
+	  
+	  .labels {
+		 color: yellow;
+		 font-family: "Lucida Grande", "Arial", sans-serif;
+		 font-size: 10px;
+		 font-weight: bold;
+		 text-align: left;
+		 width: 40px;     
+		 border: 2px solid black;
+		 white-space: nowrap;
+	  }
+    </style>
+   
+	<script type="text/javascript" language="JavaScript" src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
+	<script type="text/javascript" language="JavaScript" src="https://www.google.com/jsapi"></script>
+	<script type="text/javascript" language="JavaScript" src="js/jsCalculations_2014.js"></script>
+	<script type="text/javascript" language="JavaScript" src="js/NumberFormat150.js"></script>
+	<script type="text/javascript" language="JavaScript" src="js/fusiontips.js"></script>
+	<script type="text/javascript" language="JavaScript" src="js/markerwithlabel.js" ></script>
+				<script type="text/javascript" src="js/jquery-1.7.2.min.js"></script>
+	<script type="text/javascript" language="JavaScript" src="js/process_endpoints.js" ></script>
+    <script type="text/javascript" language="JavaScript" src="js/process_route.js" ></script>
+	
+    <script type="text/javascript">
+		var map
+		//Map Layers
+		var trafficLayer
+		var turnpikeSystemLayer
+		var turnpikeExitsLayer
+		//Facility Shields
+		var FS_Polk
+		var FS_Beachline
+		var FS_WesternBeltway
+		var FS_Mainline1
+		var FS_Mainline2
+		var FS_Mainline3
+		var FS_Suncoast
+		var FS_Veterans
+		var FS_Seminole
+		var FS_SouthernConn
+		var FS_Selmon
+		//Route Layers for Highlighting
+		var routeLayer1
+		var routeLayer2
+		var TSLR
+		//Control Buttons for top right of map (Traffic, Reset)
+		var controlUI = document.createElement('div');
+		var controlUI1 = document.createElement('div');
+		var controlUI2 = document.createElement('div');
+		var controlUI3 = document.createElement('div');
+		var myInfoWindow
+		var startPoint = "";
+		var startMarker
+		var startFacilityID = "";
+		var startMilePost
+		var startExitNumber
+		var routeStartNumber
+		var endPoint = "";
+		var endMarker
+		var endFacilityID = "";
+		var endMilePost
+		var endExitNumber
+		var routeEndNumber
+		var myFacility
+		var myFacilityID
+		var myExitName
+		var myExitNum		//this is the displayed Exit Number ie: 2 or 2A.  Used to calculate Toll
+		var myExitNumber 	//this is the numeric exit number.  Used for highlighting users route
+		var myExitMilepost
+		var mySystem
+		var myWhere = "";
+		var sunPassSavings = new NumberFormat();
+		var sunPassOnly
+		var systemCenter
+		var systemZoomLevel
+		var startMarkerImage = new google.maps.MarkerImage("http://maps.gstatic.com/mapfiles/ms2/micons/green.png")
+		var endMarkerImage = new google.maps.MarkerImage("http://maps.gstatic.com/mapfiles/ms2/micons/red.png")
+		
+		//Old Fusion tables - left here for reference
+		//var myTable = '13TRouxA_A1KvHZjkT8FqU2wTYB8OP8zdsx4-lVI';  			//Table name is TurnpikeExits_2014-old -- This is the 2014 Exit Table, Include Alligator Alley Exits AND SunPass Rate increases
+		//var mySystemsTable = '1f16IRm0bAvWtQ3SamhP8D246bosbDZmPYTQ9w0w';		//Table name is TurnpikeSystems -- 
+		//var mySectionsTable	= '146hSXcaP3DUKNq9R_ytZWRj3ekcz0r1M0tVd9-c';	//Table name is TP_Sections-May2013
+
+		//var myTable = '1fCFc1O6Zg2_3Qs-fLmBOdW4_rJeyObS23UcHQTs';  			//Table name is TurnpikeExits_2014 -- This is the 2014 Exit Table, Includes New Selmon Exits //Sawgrass Toll-By-Plate makes this table obsolete
+		//var myTable = '1UGhvnG0Nruwuap5GnOjKEo1VE5uvCUBhwnNkiCUl';  			//Table name is TurnpikeExits_2014-SG-TBP -- This is the 2014 Exit Table, Includes New Selmon Exits and Sawgrass TOLL-BY-PLATE tolls
+		var myTable = '15f3uWYeGgrBaRI-94NcWQdvc6L53hmIRrkGasji5';  			//Table name is TurnpikeExits_2014-SG-V-TBP -- This is the 2014 Exit Table, Includes New Selmon Exits and Sawgrass AND VETERANS TOLL-BY-PLATE tolls
+		var mySystemsTable = '14bjuzl-uvQDOD8rWyhaKGnMfLBXrwVaeysaKYRo';		//Table name is TurnpikeSystems_2014 -- This is the 2014 System Table, Includes New Selmon Road Sections
+		var mySectionsTable	= '1vq8650PBQIgmbdK6QaENLYnA3hZYDLhQWVOT6VI';		//Table name is TP_Sections_2014
+
+		var defaultCenter = new google.maps.LatLng(27.790491,-83.825684);
+		var defaultZoom = 7;
+		var myToll = new Array(2);
+		var calculatedToll = new Array(2);
+
+		google.load('visualization', '1');
+		//google.setOnloadCallback(initialize());
+
+		function initialize() {
+		// http://code.google.com/apis/maps/documentation/javascript/styling.html
+		var noPOILabels = [
+			{ 
+				featureType: "poi", 
+				elementType: "labels", 
+				stylers: [ { visibility: "off" } ] 
+			}
+		];
+
+		// Create a new StyledMapType object, passing it the array of styles,
+		// as well as the name to be displayed on the map type control.
+		var noPOIMapType = new google.maps.StyledMapType(noPOILabels,
+		{name: "NO POI"});
+
+  		var mapOptions = {
+				center: defaultCenter,
+				zoom: defaultZoom,
+				panControl: true,
+				zoomControl: true,
+				mapTypeControl: false,
+				scaleControl: true,
+				streetViewControl: false,
+				overviewMapControl: true,
+				mapTypeId: google.maps.MapTypeId.ROADMAP
+			};
+			map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
+
+			//Associate the styled map with the MapTypeId and set it to display.
+			map.mapTypes.set('no_poi', noPOIMapType);
+			map.setMapTypeId('no_poi');
+			
+			//Turns on/off the Facility Shields based on the zoom level
+			google.maps.event.addListener(map, 'zoom_changed', function() {
+				zoomLevel = map.getZoom();
+				if ((zoomLevel > 8) && (zoomLevel <= 11)) {
+					FS_Suncoast.setVisible(true);
+					FS_Veterans.setVisible(true);
+					FS_Polk.setVisible(true);
+					FS_Beachline.setVisible(true);
+					FS_Seminole.setVisible(true);
+					FS_Mainline1.setVisible(true);
+					FS_Mainline2.setVisible(true);
+					FS_Mainline3.setVisible(true);
+					FS_Sawgrass.setVisible(true);
+					FS_SouthernConn.setVisible(true);
+					FS_WesternBeltway.setVisible(true);
+					FS_Selmon.setVisible(true);
+				} else if ((zoomLevel > 11) && (zoomLevel < 15)) {
+					FS_Suncoast.setVisible(false);
+					FS_Veterans.setVisible(false);
+					FS_Polk.setVisible(false);
+					FS_Beachline.setVisible(false);
+					FS_Seminole.setVisible(false);
+					FS_Mainline1.setVisible(false);
+					FS_Mainline2.setVisible(false);
+					FS_Mainline3.setVisible(false);
+					FS_Sawgrass.setVisible(false);
+					FS_SouthernConn.setVisible(false);
+					FS_WesternBeltway.setVisible(false);
+					FS_Selmon.setVisible(true);
+				} else {
+					FS_Suncoast.setVisible(false);
+					FS_Veterans.setVisible(false);
+					FS_Polk.setVisible(false);
+					FS_Beachline.setVisible(false);
+					FS_Seminole.setVisible(false);
+					FS_Mainline1.setVisible(false);
+					FS_Mainline2.setVisible(false);
+					FS_Mainline3.setVisible(false);
+					FS_Sawgrass.setVisible(false);
+					FS_SouthernConn.setVisible(false);
+					FS_WesternBeltway.setVisible(false);
+					FS_Selmon.setVisible(false);
+				}
+			});
+			
+			//This is to highlight the users route
+			//May have to swap out to something like this example: http://googleapitips.blogspot.com/
+			var polylineOptionsActual = new google.maps.Polyline({
+				strokeColor: '#FFFF00',
+				strokeOpacity: .7,
+				strokeWeight: 3
+			});
+
+			
+			// Create the DIV to hold the control and
+			// call the HomeControl() constructor passing
+			// in this DIV.
+			// Create the DIV to hold the Traffic Layer Legend control 
+			var TLL_ControlDiv = document.createElement('div');
+			var homeControl1 = new HomeControl1(TLL_ControlDiv, map);
+			TLL_ControlDiv.index = 1;
+			map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(TLL_ControlDiv);
+			// Create the DIV to hold the Traffic Layer Button
+			var TL_CotrolBtn = document.createElement('input');
+			var homeControl2 = new HomeControl2(TL_CotrolBtn, map);
+			map.controls[google.maps.ControlPosition.TOP_RIGHT].push(TL_CotrolBtn);			
+			// Create the DIV to hold the Reset Control BUTTON
+			var RS_CotrolBtn = document.createElement('input');
+			var homeControl3 = new HomeControl3(RS_CotrolBtn, map);
+			map.controls[google.maps.ControlPosition.RIGHT_TOP].push(RS_CotrolBtn);	
+			
+			trafficLayer = new google.maps.TrafficLayer();
+			
+			
+			//Turn on initial Statewide layer for user to select and zoom to a System
+			countyLayer = new google.maps.FusionTablesLayer({
+			  query: {
+				select: 'geometry',
+				from: '1WReDlncBRk7SCwXqDX41RzXF4es9NFruI05VT58' // Table name is county_regions
+			  },
+			  styles: [{
+				polygonOptions: {
+				  fillOpacity: 0.6
+				}
+			  }],
+			  suppressInfoWindows:true,
+			  map: map
+			});
+			countyLayer.setMap(map);
+			enableCountyLayerTips();
+			
+			google.maps.event.addListener(countyLayer, 'click', function(kmlEvent) {
+				mySystem = kmlEvent.row['name'].value;
+				if (mySystem != "No Turnpike Facilities") { 
+					setMapToSystem(mySystem);
+					//setShields();
+					countyLayer.setMap(null);
+					routeLayer1.setMap(map);
+					routeLayer2.setMap(map);					
+					//	Feb 2014 - Systems began to load on TOP of Exits making the exits unclickable
+					//	Had to reverse the order in which they are added to get them to function correctly again.
+					//	M.Esser 2-20-2014
+				//	turnpikeSystemLayer.setMap(map);  Commented Out March 2014 per TP Officials to eliminate click issue
+					turnpikeExitsLayer.setMap(map);					
+					turnpikeExitsLayer.enableMapTips({
+					  select: "'ExitNum','Name','FacilityName'", // list of columns to query, typically need only one column.
+					  from: myTable, // fusion table name
+					  where: "FacilityType NOT EQUAL TO 'System'",
+					  geometryColumn: 'geometry', // geometry column name
+					  suppressMapTips: false, // optional, whether to show map tips. default false
+					  delay: 100, // milliseconds mouse pause before send a server query. default 300.
+					  tolerance: 8 // tolerance in pixel around mouse. default is 6.
+					});				
+				}			
+			});
+
+			routeLayer1 = new google.maps.FusionTablesLayer({
+			  query: {
+				select: 'geometry',
+				from: mySectionsTable,
+				where: "name = ''"
+			  },
+			  suppressInfoWindows:true
+			  //map: map
+			});
+
+			routeLayer2 = new google.maps.FusionTablesLayer({
+			  query: {
+				select: 'geometry',
+				from: mySectionsTable,
+				where: "name = ''"
+			  },
+			  suppressInfoWindows:true
+			  //map: map
+			});
+			
+			//This is all of the Turnpike Roads that dont need mouseover ability, click events, or filtering
+			turnpikeSystemLayer = new google.maps.FusionTablesLayer({
+			  query: {
+				select: 'geometry',
+				from: mySystemsTable
+			  },
+			  styles: [{
+				polylineOptions: {
+				  strokeColor: "#00ff00",
+				  strokeWeight: .5
+				}
+			  }],
+			  suppressInfoWindows:true
+			  //map: map
+			});
+			
+			/*
+			// Added Feb 2014 in an attempt to properly order the Systems vs Exits layer (M.Esser)
+			// ONLY KML Layers have a 'Status_changed' Event
+			google.maps.event.addListener(turnpikeSystemLayer, "status_changed", function() {
+				turnpikeExitsLayer.setMap(map);
+			});
+			*/
+			
+			turnpikeExitsLayer = new google.maps.FusionTablesLayer({
+			  query: {
+				select: 'geometry',
+				from: myTable
+			  },
+			  suppressInfoWindows:true
+			  //map: map
+			});
+
+
+			google.maps.event.addListener(turnpikeExitsLayer, 'click', function(kmlEvent) {
+				var clickPos = kmlEvent.latLng;
+				var posX = new google.maps.LatLng(clickPos.lat(), clickPos.lng());
+				var myContent = kmlEvent.row['description'].value;
+				myExitName = kmlEvent.row['Name'].value;
+				myExitName = myExitName.replace("'","\\'")
+				var myFacType = kmlEvent.row['FacilityType'].value;
+				myFacility = kmlEvent.row['FacilityName'].value;
+				myFacilityID = kmlEvent.row['FacilityID'].value;
+				myExitNum = kmlEvent.row['ExitNum'].value;
+				myExitNumber = kmlEvent.row['ExitNumber'].value;
+				myExitMilepost = kmlEvent.row['Milepost'].value;
+				// Create info window. In content you can pass simple text or html code.
+				if (myInfoWindow) myInfoWindow.close();
+				myInfoWindow = new google.maps.InfoWindow({
+					content:  myContent
+				});
+				if (myFacType == "Exit") {
+					// THis is to display the 'NO CASH ACCEPTED AT THIS LOCATION' message for TOLL-By_Plate Systems
+					if (myFacilityID == "H" || myFacilityID == "SG" || myFacilityID == "V" || myFacilityID == "M") {
+						if (myFacilityID == "H") {
+							myContent =  myContent + '<table width="100%"><tr style="text-align:center;font-weight:bold;background:#FF0000"><td>NO CASH ACCEPTED AT THIS LOCATION</td></tr></table>'
+						} 
+						if (myFacilityID == "SG") {
+							if (myExitNum != '0' && myExitNum != '1A' && myExitNum != '1B' && myExitNum != '14') {
+								myContent =  myContent + '<table width="100%"><tr style="text-align:center;font-weight:bold;background:#FF0000"><td>NO CASH ACCEPTED AT THIS LOCATION</td></tr></table>'
+							}
+						}
+						if (myFacilityID == "V") {
+							if (myExitNum == '4' || myExitNum == '6A' || myExitNum == '6B') {
+								myContent =  myContent + '<table width="100%"><tr style="text-align:center;font-weight:bold;background:#FF0000"><td>NO CASH ACCEPTED AT THIS LOCATION</td></tr></table>'
+							}
+						}
+						if (myFacilityID == "M" && myExitNum == '47') {
+							myContent =  myContent + '<table width="100%"><tr style="text-align:center;font-weight:bold;background:#FF0000"><td>NO CASH ACCEPTED AT THIS LOCATION</td></tr></table>'
+						}
+					}
+					//Not a Toll or Service Plaza so add the Set Start/End links
+					myContent =  myContent + '<table width="100%"><tr><td align="center"><a href="javascript:setStartPoint(\'' +  myExitName +   '\',' + clickPos.lat() + ',' + clickPos.lng()+ ');">Starting Point</a></td>'
+					myContent =  myContent + '<td align="center"><a href="javascript:setEndPoint(\'' +  myExitName +   '\',' + clickPos.lat() + ',' + clickPos.lng()+ ');">Ending Point</a></td></tr></table>'
+				};
+				myInfoWindow.setContent(myContent);
+				myInfoWindow.setPosition(posX);
+			    myInfoWindow.setOptions({maxWidth:220});
+				myInfoWindow.open(map); 
+			});
+			
+			setShields(); //Turn on Facility Shields
+			
+			
+			//Get the Axle count from the parent page now so that it can be used in the toll calculation
+			var ac = window.parent.document.getElementsByName("optAxleCount");
+			for (var x = 0; x < ac.length; x ++) {
+			  if (ac[x].checked) {
+				changeAxleFactor(x+2,false);
+			  }
+			}
+		}
+
+		/**
+		* The HomeControl adds a control to the map that toggles the Traffic Layer on/off
+		* This constructor takes the control DIV as an argument.
+		*/
+		function HomeControl1(controlDiv, map) {
+			controlDiv.style.padding = '10px';
+			// Set CSS for the control border
+			//var controlUI1 = document.createElement('div');
+			controlUI1.style.backgroundColor = '#C9C9C2';
+			controlUI1.style.borderStyle = 'solid';
+			controlUI1.style.borderWidth = '2px';
+			controlUI1.style.cursor = 'pointer';
+			controlUI1.style.textAlign = 'center';
+			controlUI1.title = 'Traffic Layer Legend';
+			controlDiv.appendChild(controlUI1);
+
+			// Set CSS for the control interior
+			var controlText1 = document.createElement('div');
+			controlText1.style.fontFamily = 'Arial,sans-serif';
+			controlText1.style.fontSize = '12px';
+			controlText1.style.paddingTop = '10px';
+			controlText1.style.paddingBottom = '10px';
+			controlText1.style.paddingLeft = '20px';
+			controlText1.style.paddingRight = '20px';
+
+			var trafficLegendText  = '<b>Live Traffic</b>&nbsp;&nbsp;&nbsp;&nbsp;<table><tr><td>Slow</td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td>Fast</td></tr>'
+			trafficLegendText = trafficLegendText + '<tr><td style="background-color: #30ac3e"></td><td style="background-color: #ffcf00"></td><td style="background-color: #ff0000"></td></tr></table>'
+
+			trafficLegendText = '<b>Live Traffic</b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Slow&nbsp;<span style="background-color: #ff0000">&nbsp;&nbsp;</span>&nbsp;&nbsp;<span style="background-color: #ffcf00">&nbsp;&nbsp;</span>&nbsp;&nbsp;&nbsp;<span style="background-color: #30ac3e">&nbsp;&nbsp;</span>Fast';
+
+			controlText1.innerHTML = trafficLegendText;
+			controlUI1.appendChild(controlText1);
+			controlUI1.style.visibility = 'hidden';
+		}
+		
+		function HomeControl2(controlDiv, map) {
+			controlDiv.style.padding = '0px';
+			controlDiv.id="btnTraffic";
+			controlDiv.setAttribute("type", "image");
+			controlDiv.setAttribute("src", "images/Traffic.jpg");
+			controlDiv.setAttribute("value", "Traffic");
+			controlDiv.setAttribute("title", "Click to turn the Traffic layer on/off");
+			controlDiv.style.fontFamily = 'Arial,sans-serif';
+			controlDiv.style.fontSize = '14px';
+			controlDiv.style.fontWeight = 'bold';
+			controlDiv.index = 1;
+			// Setup the click event listeners: turn Traffic Layer on/off
+			google.maps.event.addDomListener(controlDiv, 'click', function() {
+				if (trafficLayer.getMap()) {
+					//controlUI.style.backgroundColor = 'white';
+					trafficLayer.setMap(null);
+					controlUI1.style.visibility = 'hidden';
+				} else {
+					//controlUI.style.backgroundColor = 'white';
+					trafficLayer.setMap(map);
+					controlUI1.style.visibility = 'visible';
+				}
+			});
+		}
+		
+		function HomeControl3(controlDiv, map) { //Reset Page back to default
+			controlDiv.style.padding = '0px';
+			controlDiv.id="btnReset";
+			controlDiv.setAttribute("type", "image");
+			controlDiv.setAttribute("src", "images/Reset1.jpg");
+			controlDiv.setAttribute("value", "Reset");
+			controlDiv.setAttribute("title", "Click to reset the map.");
+			controlDiv.style.fontFamily = 'Arial,sans-serif';
+			controlDiv.style.fontSize = '14px';
+			controlDiv.style.fontWeight = 'bold';
+			controlDiv.index = 1;
+			// Setup the click event listeners: reset map
+			google.maps.event.addDomListener(controlDiv, 'click', function() {
+				map.setCenter(defaultCenter);
+				map.setZoom(defaultZoom);				
+				clearRouteHighlighting();
+			//	turnpikeSystemLayer.setMap(null);  Commented Out March 2014 per TP Officials to eleiminate click issue
+				turnpikeExitsLayer.setOptions({
+				  query: {
+					select: 'geometry',
+					from: myTable
+					}
+				});
+				if (trafficLayer.getMap()) {
+					trafficLayer.setMap(null);
+					controlUI1.style.visibility = 'hidden';
+				}
+				turnpikeExitsLayer.setMap(null);
+				//if (tollPlazasOnRoute.getMap()) {tollPlazasOnRoute.setMap(null);}
+				// UNTIL we get this working - dont try to set something that doesnt exist
+				//TSLR.setMap(null);
+
+				countyLayer.setMap(map);
+				enableCountyLayerTips();
+
+				//CLEAR OUT ALL MARKERS
+				resetMap();
+
+			});
+
+		}
+		
+		function zoomToSystemClicked(location){
+			map.setZoom(12);
+			map.setCenter(location);
+		}
+		
+		function setStartPoint(sP, ptLat, ptLng){
+		    if (typeof(myInfoWindow) !== 'undefined'){
+			    myInfoWindow.close();
+			}
+			if (sP == "Consulate Dr." ) {
+				alert("Exit 255 " + sP + " is only available as a Southbound Exit. \nPlease select another starting point."); 
+			} else if (sP == "Kissimmee-St. Cloud South (U.S. 192 / U.S. 441)" ) {
+				//Exit 242
+				alert("Exit 242 " + sP + " is only available as a Northbound Exit. \nPlease select another starting point."); 
+			} else if ((sP == "International Dr." ) && (myFacilityID == "SCONN")) {
+				alert("Exit 6 " + sP + " is only available as a Eastbound Exit. \nPlease select another starting point.");
+			} else if ((sP == "Port to I-4 EB or WB (Trucks Only)") && ((startPoint == "Selmon EB to I-4 EB") || (startPoint == "Selmon WB to I-4 WB"))) {
+				alert( sP + " is not available from your current starting point. \nPlease select another start or end point."); 
+			} else if ((sP == "Port to I-4 EB or WB (Trucks Only)") && ((endPoint == "Selmon EB to I-4 EB") || (endPoint == "Selmon WB to I-4 WB"))){
+				alert( sP + " is not available from your current starting point. \nPlease select another start or end point."); 
+			} else {
+				startPoint = sP;
+				window.parent.document.getElementById('StartExit').innerHTML = "Start Point:  " + sP;
+				document.getElementById("start").value = new google.maps.LatLng(ptLat,ptLng);
+				if (startMarker == undefined){
+					startMarker = new google.maps.Marker({
+						position: new google.maps.LatLng(ptLat,ptLng),
+						//title: sP,
+						map: map,
+						icon: startMarkerImage
+					});
+				}
+				else{
+					startMarker.setPosition(new google.maps.LatLng(ptLat,ptLng));
+				}
+				startMarker.setMap(map);
+				startFacilityID = myFacilityID;
+				getStartingExitData(myExitName,myExitMilepost,myFacilityID)
+				startMilePost = myExitMilepost;
+				startExitNumber = myExitNum;
+				routeStartNumber = myExitNumber;
+				//if(start.value == end.value){ clearRouteDetails("Start"); }
+				if((startFacilityID == endFacilityID) && (startExitNumber == endExitNumber)){
+					clearRouteDetails("Start"); 
+				}
+				filterOptions(myFacility);
+				calcToll();
+			}
+		}
+
+		function setEndPoint(eP, ptLat, ptLng){
+			myInfoWindow.close();
+			if  ((eP == "Kissimmee-St. Cloud South (U.S. 192 / U.S. 441)") && (startMilePost >  195)) {
+				alert( eP + " is only available as a Northbound Exit. \nPlease select another ending point.");
+			} else if ((eP == "Consulate Dr.")  && (startMilePost <  208.402)) {
+				alert( eP + " is only available as a Southbound Exit. \nPlease select another start or end point."); 
+			} else if ((eP == "Port to I-4 EB or WB (Trucks Only)") && ((startPoint == "Selmon EB to I-4 EB")|| (startPoint == "Selmon WB to I-4 WB"))){
+				alert( eP + " is not available from your current starting point. \nPlease select another start or end point."); 
+			} else if ((eP == "Consulate Dr.")  && (startMilePost <  208.402)) {
+				alert( eP + " is only available as a Southbound Exit. \nPlease select another start or end point."); 
+			} else if (eP == "County Line Rd." ) {
+				alert( eP + " is only available as a Southbound On or Northbound On ramp. \nPlease select another end point.");
+			} else {
+				endPoint = eP;
+				window.parent.document.getElementById('EndExit').innerHTML = "End Point:  " + eP;
+				document.getElementById("end").value = new google.maps.LatLng(ptLat,ptLng);
+				if (endMarker == undefined){
+					endMarker = new google.maps.Marker({
+						position: new google.maps.LatLng(ptLat,ptLng),
+						map: map,
+						icon: endMarkerImage
+					});
+				}
+				else{
+					endMarker.setPosition(new google.maps.LatLng(ptLat,ptLng));
+				}
+				endMarker.setMap(map);
+				endFacilityID = myFacilityID;
+				//calcRoute();
+				getEndingExitData(myExitName,myExitMilepost,myFacilityID);
+				endMilePost = myExitMilepost;
+				endExitNumber = myExitNum;
+				routeEndNumber = myExitNumber;
+				//if(start.value == end.value){ clearRouteDetails("End"); }
+				if((endFacilityID == startFacilityID) && (endExitNumber == startExitNumber)){
+					clearRouteDetails("End"); 
+				}
+				filterOptions(myFacility);
+				calcToll();
+			}
+		}			
+		
+		function calcRoute() {
+		  var request = {
+			origin: document.getElementById("start").value,
+			destination: document.getElementById("end").value,
+			travelMode: google.maps.TravelMode.DRIVING,			
+			avoidHighways: false,
+			avoidTolls: false
+		  };
+		}
+		
+		function filterOptions() {
+		tollByPlateOnOff = true;  //this is set to false because javascript can set radiobtn 'disabled' property so its reverse
+		myWhere = "";
+		var tempFacility = ""
+		if (myFacilityID == "H"){
+			tempFacility = "HEFT"
+		} else {
+			tempFacility = myFacility
+		}
+
+			switch(tempFacility)
+			{
+			  case "Mainline": 
+			    myWhere = myWhere + "FacilityName IN ('Mainline','HEFT','Beachline West','Sawgrass')"; 
+				//If ANY exit above 285 is selected, remove exit 285 and 242
+				if ((myExitMilepost > 238.754) && (myExitName==startPoint)){
+				  myWhere = myWhere + " AND ExitNum not equal to '285' AND ExitNum not equal to '242'";
+				}
+				if ((myExitMilepost > 195.624) && (myExitName==startPoint)){
+				  //Exit 242 is NB Exit ONLY
+				  myWhere = myWhere + " AND ExitNum not equal to '242'";
+				}
+				if ((myExitNum=='309') && (myExitName==endPoint)){
+				  myWhere = myWhere + " AND ExitNum not equal to '285' AND ExitNum not equal to '255' AND ExitNum not equal to '242'";
+				}
+				//Exit 289 Filters
+				if ((myExitNum=='289') && ((myExitName==startPoint) || (myExitName==endPoint))){
+				  myWhere = myWhere + " AND Milepost >= " + myExitMilepost; 
+				}
+				if(startExitMile < 241.996){
+				  myWhere = myWhere + " AND ExitNum not equal to '289'";
+				    // If this exit is currently selected as the End Point, clear it.  
+					if(endExitMile == 241.996){
+						endMarker.setMap(null);
+						clearRouteDetails("Start")
+				    }
+				}
+				if ((myExitNum=='285') && ((myExitName==startPoint) || (myExitName==endPoint))){
+				  myWhere = myWhere + " AND Milepost <= " + myExitMilepost; 
+				}
+				
+				if ((myExitNum == '242') && (myExitName==endPoint)){
+				  myWhere = myWhere + " AND Milepost <= " + myExitMilepost; 
+				  myWhere = myWhere + " AND FacilityName IN ('Mainline','HEFT','Sawgrass')";
+				}
+				
+				
+				//Exit 240 Filters
+				
+				if (myExitNum=='240'){
+					myWhere = myWhere + " AND Milepost IN (";
+					//Beachline Exits
+					myWhere = myWhere + "8.15,6,4.315,3.118,1.906,0.846,0,";
+					//Mainline Exits
+					myWhere = myWhere + "299,288,263,261.701,258.312,249.584,241.996,238.754,225.972,221.108,220.821,218.92,212.631,208.402,208.302,201.74,197.553,195.624";
+					myWhere = myWhere + ")";
+				
+				}
+				
+				if ((myExitNum=='240') && (myExitName==startPoint)){
+				  //All Exits Above exit 240 on Mainline
+				//  myWhere = myWhere + " AND Milepost >= " + myExitMilepost; 
+				}
+				
+				
+				if((startExitMile < 193.624) && (startFacilityID != "B")) {
+				  myWhere = myWhere + " AND ExitNum not equal to '240'";
+				    // If this exit is currently selected as the End Point, clear it.  
+					if(endExitMile == 193.624){
+						endMarker.setMap(null);
+						clearRouteDetails("Start")
+				    }
+				}
+				if ((myExitMilepost < 197.553) && (myExitName==startPoint)){
+				  myWhere = myWhere + " AND ExitNum not equal to '244'";
+				}
+				if (myExitMilepost < 208.402){
+				  myWhere = myWhere + " AND ExitNum not equal to '255'";
+				}
+				
+				
+				//Exit 98 Filters
+				if ((myExitNum=='98') && (myExitName==startPoint)){
+				  //All Exits on the HEFT, MSPUR and below exit 98 on Mainline
+				  myWhere = myWhere + " AND FacilityName IN ('Mainline','HEFT')";
+				  myWhere = myWhere + " AND Milepost <= " + myExitMilepost; 
+				}
+				if(startExitMile > 51.647){
+				  myWhere = myWhere + " AND ExitNum not equal to '98'";
+				    // If this exit is currently selected as the End Point, clear it.  
+					if(endExitMile == 51.647){
+						endMarker.setMap(null);
+						clearRouteDetails("Start")
+				    }
+				}
+				
+				
+				//Exit 66 Filters
+				if (myExitNum=='66'){
+				  //All Exits on the HEFT, MSPUR and below exit 66 on Mainline
+				  myWhere = myWhere + " AND FacilityName IN ('Mainline','HEFT')";
+				  myWhere = myWhere + " AND ExitNumber <= 66";
+				}
+				if(startExitMile > 19.04){
+				  myWhere = myWhere + " AND ExitNum not equal to '66'";
+				    // If this exit is currently selected as the End Point, clear it.  
+					if(endExitMile == 19.04){
+						endMarker.setMap(null);
+						clearRouteDetails("Start")
+				    }
+				}
+
+				
+				//Exit 17 is on the HEFT and is ONLY SB ON or NB OFF
+				myWhere = myWhere + " AND ExitNum not equal to '17' AND ExitNum not equal to '39'";
+				tollByPlateOnOff = false;
+				
+				/*
+				if(myExitNum == '2X' || myExitNum == '6A' ||myExitNum == '6B'){
+					tollByPlateOFF = false;
+					tollByPlateOnOff = false;
+				} else {
+					tollByPlateOFF = true;  
+					tollByPlateOnOff = true;
+				}
+				*/
+				
+				break;
+				
+			  case "Western Beltway": myWhere = myWhere + "FacilityName = 'Western Beltway'"; tollByPlateOFF = true; break;
+			  case "Seminole": myWhere = myWhere + "FacilityName = 'Seminole'"; 
+				if ((myExitNum=='55C') && (myExitName==startPoint)){
+				  myWhere = myWhere + " AND ExitNum not equal to '55'";
+				}
+				if ((myExitNum=='55') && (myExitName==startPoint)){
+				  myWhere = myWhere + " AND ExitNum not equal to '55C'";
+				}
+				tollByPlateOFF = true;
+				break;
+			  case "Beachline West": myWhere = myWhere + "FacilityName IN('Mainline','HEFT','Beachline West','Sawgrass')"; 
+				//Cannot use following Mainline exits if either exit is on the Beachline
+				//Exit 289 NBON SBOFF Only
+				//Exit 255 SunPass SBOFF Only
+				//Exit 242 is NB Exit ONLY
+				myWhere = myWhere + " AND ExitNum not equal to '285' AND ExitNum not equal to '255' AND ExitNum not equal to '242'";
+				myWhere = myWhere + " AND ExitNum not equal to '39'"; //This is I75 exit on the HEFT
+			    tollByPlateOFF = true;
+				break;
+			  case "Southern Connector": myWhere = myWhere + "FacilityName = 'Southern Connector'";tollByPlateOFF = true; break;
+			  case "Alligator Alley": myWhere = myWhere + "FacilityName = 'Alligator Alley'";tollByPlateOFF = true; break;
+			  case "Suncoast": 
+			    myWhere = myWhere + "FacilityName IN ('Veterans','Suncoast') AND ExitNum not equal to '6B' AND ExitNum not equal to '13' AND Milepost not equal to 16"; 
+					// If exit 16 is currently selected as the End Point, clear it.  
+					if(endExitMile == 16.000){
+						//alert("Exit 16 - Dale Mabry Hwy. is only available from the Veterans  Expressway. \nYour selection of Dale Mabry Hwy. has been cleared and the toll amount reset to $0.00 \nPlease select another ending point."); break;
+						endMarker.setMap(null);
+						clearRouteDetails("Start")
+				    }
+				tollByPlateOFF = true; 
+				break;
+			  case "Veterans": 
+			    //myExitName,myExitMilepost,myFacilityID
+			    myWhere = myWhere + "FacilityName in ('Veterans','Suncoast')";
+				//if ((myExitNum=='16') && (myExitName==startPoint)){
+				if (myExitNum=='16'){
+				  myWhere = myWhere + " AND FacilityName = 'Veterans'"; 
+				}
+				//Exit 8 Filters
+				if(startExitMile < 6.25){
+				  myWhere = myWhere + " AND ExitNum not equal to '8'";
+				    // If this exit is currently selected as the End Point, clear it.  
+					//if(endExitMile == 5.652){
+					if(endExitMile == 6.25){
+						endMarker.setMap(null);
+						clearRouteDetails("Start")
+				    }
+				}
+				if ((myExitNum=='8') && (myExitName==startPoint)){
+				  myWhere = myWhere + " AND Milepost >= " + myExitMilepost; 
+				}
+				//Exit 7 Filters
+				if(startExitMile > 5.652){
+				  myWhere = myWhere + " AND ExitNum not equal to '7'";
+				    // If this exit is currently selected as the End Point, clear it.  
+					if(endExitMile == 5.652){
+						endMarker.setMap(null);
+						clearRouteDetails("Start")
+				    }
+				}
+				if ((myExitNum=='7') && (myExitName==startPoint)){
+				  myWhere = myWhere + " AND ExitNum not equal to '6B' AND ExitNum not equal to '2B' AND Milepost <= " + myExitMilepost; 
+				}
+				if ((myExitNum=='7') && (myExitName==endPoint)){
+				  myWhere = myWhere + " AND Milepost <= " + myExitMilepost; 
+				}
+				if (myExitNum=='6B'){
+				  myWhere = myWhere + " AND ExitNum not equal to '2B' AND Milepost <= " + myExitMilepost;
+				}
+				//if ((myExitMilepost > 13.5) && (myFacilityID == "SC")){
+				if ((myExitMilepost > 12.8) && (myFacilityID == "SC")){
+				  //Exit 13 is NBON and SBOFF Continuing on to Veterans Only
+				  myWhere = myWhere + " AND ExitNum not equal to '13'";
+				  // If this exit is currently selected as the End Point, clear it.  
+				  if(endExitMile == 5.652){
+					endMarker.setMap(null);
+					clearRouteDetails("Start")
+				  }
+				}
+				if (myExitMilepost > 4.694){
+				  //Exit 6B is NBOFF and SBON Only
+				  myWhere = myWhere + " AND ExitNum not equal to '6B'";
+				}
+				//Exit 2B Filters
+				if(startExitMile > 0.722){
+				  myWhere = myWhere + " AND ExitNum not equal to '2B'";
+				    // If this exit is currently selected as the End Point, clear it.  
+					if(endExitMile == 0.722){
+						endMarker.setMap(null);
+						clearRouteDetails("Start")
+				    }
+				}
+				if (myExitNum=='2B'){
+				  myWhere = myWhere + " AND Milepost <= " + myExitMilepost; 
+				}
+				//if(myExitNum == '4' || myExitNum == '6A' || myExitNum == '6B'){
+				if(myExitMilepost < 5.0){
+					tollByPlateOFF = false;
+					tollByPlateOnOff = false;
+				} else {
+					tollByPlateOFF = true;  
+					tollByPlateOnOff = true;
+				}
+				
+				break;
+			  case "Skyway": myWhere = myWhere + "FacilityName = 'Skyway'"; tollByPlateOFF = true; break;
+			  case "Polk": 
+			    myWhere = myWhere + "FacilityName = 'Polk'"; 
+			    if (myExitNum=='0'){
+				  myWhere = myWhere + " AND ExitNum not equal to '1'"; 
+			    }
+			    if (myExitNum=='1'){
+				  myWhere = myWhere + " AND ExitNum not equal to '0'"; 
+			    }
+				if ((myExitNum=='23') && ((myExitName==startPoint)||(myExitName==endPoint))){
+					if (window.parent.document.getElementById("optPmtTypeCA").checked){
+						myWhere = myWhere + " AND ExitNum not equal to '24'";
+						if(startExitMile > 22.050){
+							//insert sunpass only message
+							alert("Exit 23 - Pace Road is only available for SunPass customers. \nYour selection of Pace Rd. has been cleared and the toll amount reset to $0.00 \nPlease select another starting point."); break;
+							startMarker.setMap(null);
+							clearRouteDetails("End")					
+						}
+						if(endExitMile > 22.050){
+							alert("Exit 23 - Pace Road is only available for SunPass customers. \nYour selection of Pace Rd. has been cleared and the toll amount reset to $0.00 \nPlease select another ending point."); break;
+							endMarker.setMap(null);
+							clearRouteDetails("Start")					
+						}
+					}
+				}
+				if (window.parent.document.getElementById("optPmtTypeCA").checked) {
+					if(startExitMile > 22.050){
+						myWhere = myWhere + " AND ExitNum not equal to '23'";
+						if(endExitMile == 22.050){
+							endMarker.setMap(null);
+							clearRouteDetails("Start");
+						}
+					}
+					if(endExitMile > 22.050){
+						myWhere = myWhere + " AND ExitNum not equal to '24'";
+						if(startExitMile == 22.050){
+							endMarker.setMap(null);
+							clearRouteDetails("Start");
+						}
+					}				
+				}
+				tollByPlateOFF = true;
+				break;
+			  case "Sawgrass": 
+			    myWhere = myWhere + "FacilityName IN ('Mainline','HEFT','Beachline West','Sawgrass')";
+				if (myExitMilepost > 3){
+				  myWhere = myWhere + " AND ExitNum not equal to '1B'";
+				}
+				if (myExitNum=='1B'){
+				  myWhere = myWhere + " AND Milepost <= " + myExitMilepost; 
+			    }
+				myWhere = myWhere + " AND ExitNum not equal to '289'";
+				//Exit 17 is on the HEFT and is ONLY SB ON or NB OFF
+				myWhere = myWhere + " AND ExitNum not equal to '17'";
+				break;
+			  case "HEFT": 
+			    //myWhere = myWhere + "FacilityName IN ('Mainline','HEFT','Beachline West','Sawgrass')"; 
+				myWhere = myWhere + "FacilityID IN ('M','H','B','SG','MSPUR')"; 
+				if (myExitNum=='6'){
+					myWhere = myWhere + " AND Milepost >= " + myExitMilepost;
+					if(startExitMile < 6.076){
+						startMarker.setMap(null);
+						clearRouteDetails("End")					
+				    }
+					if(endExitMile < 6.076){
+						endMarker.setMap(null);
+						clearRouteDetails("Start")					
+				    }
+				}
+				if (myExitMilepost < 6.076){
+					if(startExitMile < 6.076){
+						//Exit 6 is NBON and SBOFF Only
+						myWhere = myWhere + " AND ExitNum not equal to '6'";
+					}
+				    // If this exit is currently selected as the End Point, clear it.  
+					if(endPoint == "Tallahassee Rd. (SW 137th Ave.)"){
+						endMarker.setMap(null);
+						clearRouteDetails("Start")					
+				    }
+				}
+				//Exit 11 Filters
+				if(startExitMile > 11.734){
+				  myWhere = myWhere + " AND ExitNum not equal to '11'";
+				    // If this exit is currently selected as the End Point, clear it.  
+					if(endExitMile == 11.734){
+						endMarker.setMap(null);
+						clearRouteDetails("Start")
+				    }
+				}
+				if ((myExitNum=='11') && (myExitName==startPoint)){//Exit 11 is NBOFF and SBON Only
+				  myWhere = myWhere + " AND Milepost <= " + myExitMilepost;
+					if(endExitMile > 11.734){
+						endMarker.setMap(null);
+						clearRouteDetails("Start")					
+				    }
+				}
+				//Exit 12 Filters
+				if ((myExitNum=='12') && (myExitName==startPoint)){//Exit 12 is NBON and SBOFF Only
+				  myWhere = myWhere + " AND Milepost >= " + myExitMilepost;
+					if(endExitMile < 12.45){
+						endMarker.setMap(null);
+						clearRouteDetails("Start")					
+				    }				  
+				}
+				if ((myExitMilepost < 12.45) && (myExitName==startPoint)){
+				   myWhere = myWhere + " AND ExitNum not equal to '12'";
+				    // If exit 12 is currently selected as the End Point, clear it.  
+					if(endExitMile == 12.45){
+						endMarker.setMap(null);
+						clearRouteDetails("Start")					
+				    }
+				}
+				if (myExitMilepost > 17.491){ //Exit 17 is NBOFF and SBON Only
+				   myWhere = myWhere + " AND ExitNum not equal to '17'";
+				}
+				if ((myExitNum=='17') && (myExitName==startPoint)){
+				  myWhere = myWhere + " AND Milepost <= " + myExitMilepost + " AND FacilityID = 'H'";
+				}
+
+				if ((myExitNum=='17') && (myExitName==endPoint)){
+				  myWhere = myWhere + " AND Milepost >= " + myExitMilepost; 
+				}
+				if (myExitNum=='39') {
+				  myWhere = myWhere + " AND Milepost <= " + myExitMilepost + " AND FacilityID = 'H'";
+				}
+				if (startMilePost > 39.433) {
+				  //Exit 39 is a NB Off and SB On Only Exit
+				  myWhere = myWhere + " AND ExitNum not equal to '39'";
+				  /*
+				  //Have to do this manually to eliminate all exits South of 39 on the HEFT
+				  myWhere = myWhere + " AND ExitNum not equal to '39' AND ExitNum not equal to '35' AND ExitNum not equal to '34'";
+				  myWhere = myWhere + " AND ExitNum not equal to '31' AND ExitNum not equal to '29' AND ExitNum not equal to '27'";
+				  myWhere = myWhere + " AND ExitNum not equal to '26' AND ExitNum not equal to '25' AND ExitNum not equal to '23'";
+				  myWhere = myWhere + " AND ExitNum not equal to '20' AND ExitNum not equal to '19' AND ExitNum not equal to '17'";
+				  myWhere = myWhere + " AND ExitNum not equal to '16' AND ExitNum not equal to '13' AND ExitNum not equal to '12'";
+				  myWhere = myWhere + " AND ExitNum not equal to '11' AND ExitNum not equal to '9' AND ExitNum not equal to '6'";
+				  myWhere = myWhere + " AND ExitNum not equal to '5' AND ExitNum not equal to '2' AND ExitNum not equal to '0'";
+				  */
+				}
+ 				if ((myExitNum=='47') && (myExitName==startPoint)){
+				  myWhere = myWhere + " AND Milepost <= " + myExitMilepost + " AND ExitNum not equal to '39' AND FacilityID = 'H'";
+				}
+				myWhere = myWhere + " AND ExitNum not equal to '289'";
+				tollByPlateOnOff = false;
+
+				break;
+			
+			  case "I-4 Connector": 
+				myWhere = myWhere + "FacilityName IN ('I-4 Connector')";
+
+				if (myExitName=='Selmon EB to I-4 EB') {
+					myWhere = myWhere + " AND Name IN ('I-4 WB to Selmon WB or Port','Selmon EB to I-4 EB','Selmon Toll Plaza')";
+					if (myExitName==startPoint){
+						// If an invalid exit is currently selected as the End Point, clear it.  
+						//if((endPoint == 'I-4 EB to Selmon EB or Port') || (endPoint == 'Selmon WB to I-4 WB') || (endPoint == 'Port to I-4 EB or WB (Trucks Only)')){
+						if((endPoint != 'I-4 WB to Selmon WB or Port') && (endPoint != '')){
+							endMarker.setMap(null);
+							clearRouteDetails("Start")
+						}
+					} else {
+						//if((startPoint == 'I-4 EB to Selmon EB or Port') || (startPoint == 'Selmon WB to I-4 WB') || (startPoint == 'Port to I-4 EB or WB (Trucks Only)')){
+						if((startPoint != 'I-4 WB to Selmon WB or Port') && (startPoint != '')){
+							startMarker.setMap(null);
+							clearRouteDetails("End")
+						}
+					}
+				}				
+
+				if (myExitName=='Selmon WB to I-4 WB') {
+				  myWhere = myWhere + " AND Name IN ('I-4 EB to Selmon EB or Port','Selmon WB to I-4 WB','Selmon Toll Plaza')";
+					if (myExitName==startPoint){
+						// If an invalid exit is currently selected as the End Point, clear it.  
+						if((endPoint != 'I-4 EB to Selmon EB or Port') && (endPoint != '')){
+							endMarker.setMap(null);
+							clearRouteDetails("Start")
+						}
+					} else {
+						if((startPoint != 'I-4 EB to Selmon EB or Port') && (startPoint != '')){
+							startMarker.setMap(null);
+							clearRouteDetails("End")
+						}
+					}
+				}
+			
+				if (myExitName=='I-4 EB to Selmon EB or Port') {
+					myWhere = myWhere + " AND Name IN ('Port to I-4 EB or WB (Trucks Only)','Selmon WB to I-4 WB','I-4 EB to Selmon EB or Port','Selmon Toll Plaza')";
+			/*		if (myExitName==startPoint){
+						//if(((endPoint == 'Selmon EB to I-4 EB') || (endPoint == 'I-4 WB to Selmon WB or Port')) && (endPoint != '')){//
+						if(((endPoint == 'Selmon EB to I-4 EB') || (endPoint == 'I-4 WB to Selmon WB or Port') || (endPoint==''))){
+							endMarker.setMap(null);
+							clearRouteDetails("Start")
+						}
+					} else {
+						//if(((startPoint == 'Selmon EB to I-4 EB') || (startPoint == 'I-4 WB to Selmon WB or Port')) && (startPoint != '')){
+						if(((startPoint == 'Selmon EB to I-4 EB') || (startPoint == 'I-4 WB to Selmon WB or Port') || (startPoint==''))){
+							startMarker.setMap(null);
+							clearRouteDetails("End")
+						}					
+					}
+			*/	}
+			
+				
+				
+				
+				if (myExitName=='I-4 WB to Selmon WB or Port') {
+				  myWhere = myWhere + " AND Name IN ('Port to I-4 EB or WB (Trucks Only)','Selmon EB to I-4 EB','I-4 WB to Selmon WB or Port','Selmon Toll Plaza')";
+				  tollByPlateOnOff = false;
+				}
+				
+				
+				if (myExitName=='Port to I-4 EB or WB (Trucks Only)') {
+				  myWhere = myWhere + " AND Name IN ('Port to I-4 EB or WB (Trucks Only)','I-4 EB to Selmon EB or Port','I-4 WB to Selmon WB or Port','Selmon Toll Plaza')";
+				  tollByPlateOnOff = false;
+				}
+				
+				tollByPlateOnOff = false;
+				break;
+				
+			  default: myWhere = myWhere; tollByPlateOnOff = false; tollByPlateOFF = true;
+			}
+
+			if (myWhere != ""){
+				myNewWhere = myWhere
+				if(sunPassOnly != ""){
+					myNewWhere = myWhere + " AND " + sunPassOnly;
+				}
+			} else {
+				myNewWhere = sunPassOnly;
+			}
+			
+			turnpikeExitsLayer.setOptions({
+			  query: {
+				select: 'geometry',
+				from: myTable,
+				where: myNewWhere
+				}
+			});
+			
+			
+			// April 2014 - Exits began to pop up on top of County Layer when a user changed payment type.
+			// The fix below (implemented in March, has been logic'd (yes I know, not a real word) out.
+			// This appears to have fixed the issue M.Esser 04-17-2014
+			if (1==2){
+				//	Feb 2014 - Systems began to load on TOP of Exits making the exits unclickable
+				//	Set both to Null
+				//	M.Esser 2-20-2014
+				// turnpikeSystemLayer.setMap(null);  Commented Out March 2014 per TP Officials to eleiminate click issue
+				turnpikeExitsLayer.setMap(null);
+
+				turnpikeExitsLayer.setOptions({
+				  query: {
+					select: 'geometry',
+					from: myTable,
+					where: myNewWhere
+					}
+				});
+				//	Feb 2014 - Systems began to load on TOP of Exits making the exits unclickable
+				//	Set both to Null
+				//	M.Esser 2-20-2014
+				turnpikeExitsLayer.setMap(map);
+				turnpikeExitsLayer.enableMapTips({
+				  select: "'ExitNum','Name','FacilityName'", // list of columns to query, typially need only one column.
+				  from: myTable, // fusion table name
+				  where: "FacilityType NOT EQUAL TO 'System'",
+				  geometryColumn: 'geometry', // geometry column name
+				  suppressMapTips: false, // optional, whether to show map tips. default false
+				  delay: 100, // milliseconds mouse pause before send a server query. default 300.
+				  tolerance: 8 // tolerance in pixel around mouse. default is 6.
+				});	
+				//turnpikeSystemLayer.setMap(map);  Commented Out March 2014 per TP Officials to eleiminate click issue
+			}					
+			// Enable/Disable Toll By Plate option button based on System Clicked
+			if (startFacilityID != "" && endFacilityID != "" ){
+				//if (startFacilityID == "H" || endFacilityID == "H" || startFacilityID == "S" || startFacilityID == "MSPUR" || endFacilityID == "MSPUR" || startFacilityID == "SG" || endFacilityID == "SG") {
+				//if (startFacilityID == "H" || endFacilityID == "H" || startFacilityID == "S" || ((startFacilityID == "MSPUR" || endFacilityID == "MSPUR") && (startExitNumber == '47' || endExitNumber == '47')) || startFacilityID == "SG" || endFacilityID == "SG" || ((startFacilityID == "M" || endFacilityID == "M") && (startExitNumber == '47' || endExitNumber == '47')) || ((startFacilityID == "V" || endFacilityID == "V") && (startExitNumber == "6A" || startExitNumber == "6B" ||startExitNumber == "4" || endExitNumber == "6A" || endExitNumber == "6B" ||endExitNumber == "4"))) {
+				if (startFacilityID == "H" || endFacilityID == "H" || startFacilityID == "S" || ((startFacilityID == "MSPUR" || endFacilityID == "MSPUR") && (startExitNumber == '47' || endExitNumber == '47')) || startFacilityID == "SG" || endFacilityID == "SG" || ((startFacilityID == "M" || endFacilityID == "M") && (startExitNumber == '47' || endExitNumber == '47')) || ((startFacilityID == "V" || endFacilityID == "V") && (startMilePost < 5.0 || endMilePost < 5.0))) {
+					tollByPlateOnOff = false; 
+					// If CASH is checked, uncheck it and check TBP instead
+					if (window.parent.document.getElementById("optPmtTypeCA").checked) {
+						window.parent.document.getElementById("optPmtTypeCA").checked = false;
+						window.parent.document.getElementById("optPmtTypeTBP").checked = true;
+						cookieExpire = new Date();
+						cookieExpire.setMonth(cookieExpire.getMonth() + 12);
+						document.cookie = "pmtType=2; expires="+ cookieExpire.toGMTString() + ";";
+						}
+				} else { 
+					// If TBP is checked, uncheck it and check CASH instead
+					if (window.parent.document.getElementById("optPmtTypeTBP").checked) {
+						window.parent.document.getElementById("optPmtTypeTBP").checked = false;
+						window.parent.document.getElementById("optPmtTypeCA").checked = true;
+						window.parent.document.getElementById('tollByPlateMsg').style.visibility = "hidden";
+						cookieExpire = new Date();
+						cookieExpire.setMonth(cookieExpire.getMonth() + 12);
+						document.cookie = "pmtType=3; expires="+ cookieExpire.toGMTString() + ";";
+					}
+					tollByPlateOnOff = true; 
+				}
+							/*
+								if ((startFacilityID == "V" || endFacilityID == "V")) {
+									if (startExitNumber == "6A" || startExitNumber == "6B" ||startExitNumber == "4" || endExitNumber == "6A" || endExitNumber == "6B" ||endExitNumber == "4"){
+									tollByPlateOnOff = false; 
+									// If CASH is checked, uncheck it and check TBP instead
+									if (window.parent.document.getElementById("optPmtTypeCA").checked) {
+										window.parent.document.getElementById("optPmtTypeCA").checked = false;
+										window.parent.document.getElementById("optPmtTypeTBP").checked = true;
+										cookieExpire = new Date();
+										cookieExpire.setMonth(cookieExpire.getMonth() + 12);
+										document.cookie = "pmtType=2; expires="+ cookieExpire.toGMTString() + ";";
+										}
+									}
+								}
+							*/
+			}
+			window.parent.document.getElementById("optPmtTypeTBP").disabled = tollByPlateOnOff;
+			//if ((startFacilityID == "H" && endFacilityID == "H") || (startFacilityID == "MSPUR" || endFacilityID == "MSPUR") || (startFacilityID == "V" || endFacilityID == "V")) {
+			//if ((startFacilityID == "H" && endFacilityID == "H") || ((startFacilityID == "MSPUR" || endFacilityID == "MSPUR") && (startExitNumber == '47' || endExitNumber == '47')) || ((startFacilityID == "V" || endFacilityID == "V") && (startExitNumber == "6A" || startExitNumber == "6B" ||startExitNumber == "4" || endExitNumber == "6A" || endExitNumber == "6B" ||endExitNumber == "4"))) {
+			if ((startFacilityID == "H" && endFacilityID == "H") || ((startFacilityID == "MSPUR" || endFacilityID == "MSPUR") && (startExitNumber == '47' || endExitNumber == '47')) || ((startFacilityID == "V" || endFacilityID == "V") && (startMilePost < 5.0 || endMilePost < 5.0))) {
+				window.parent.document.getElementById("optPmtTypeCA").disabled = true;
+			}
+		}
+
+		function enableCountyLayerTips() {
+			countyLayer.enableMapTips({
+			  select: "'name'", // list of columns to query, typically need only one column.
+			  from: '1WReDlncBRk7SCwXqDX41RzXF4es9NFruI05VT58', // Table name is county_regions
+			  where: "name not equal to ''",
+			  geometryColumn: 'geometry', // geometry column name
+			  suppressMapTips: false, // optional, whether to show map tips. default false
+			  delay: 100, // milliseconds mouse pause before send a server query. default 300.
+			  tolerance: 8 // tolerance in pixel around mouse. default is 6.
+			});
+		}
+
+		function resetMap(){
+			//Clear start marker
+			if (document.getElementById("start").value != "") {startMarker.setMap(null);}
+			//Clear text in Starting Point textbox
+			window.parent.document.getElementById('StartExit').innerHTML = 'Start Point:';
+			//Clear hidden start variable used for route calculation
+			document.getElementById("start").value = '';
+
+			//Clear the Toll Plaza route information
+			window.parent.document.getElementById('TollPlazas').innerHTML = '';
+			window.parent.document.getElementById('TollPlazas').style.visibility = "hidden";
+			//Clear the Mileage information
+			window.parent.document.getElementById('MileageMsg').innerHTML = ''
+
+			//Clear end marker
+			if (document.getElementById("end").value != "") {endMarker.setMap(null);}
+			//Clear text in Ending Point textbox
+			window.parent.document.getElementById('EndExit').innerHTML = 'End Point:';
+			//Clear hidden end variable used for route calculation
+			document.getElementById("end").value = '';
+	
+			//Now clear the totalToll box
+			window.parent.document.getElementById('TripCost').innerHTML = "Trip Cost:  $0.00";
+			//Now hide the SunPass savings message
+			window.parent.document.getElementById('sunPassSavingsMsg').style.visibility = "hidden";
+
+			//Clear any open infoWindows
+			if (myInfoWindow) myInfoWindow.close();
+			
+			startFacilityID = "";
+			startExitNumber = "";
+			routeStartNumber = "";
+			endFacilityID = "";
+			endExitNumber = "";
+			routeEndNumber = "";
+			myFacility = "";
+			myFacilityID = "";
+			myWhere = "";
+			startPoint = "";
+			endPoint = "";
+			clearRouteHighlighting(); //Clear any route highlighting that may have occured
+		}
+
+		function clearRouteDetails(point){ //This function clears the left side menu items
+			if (point=="Start") {
+				if (document.getElementById("end").value != "") {endMarker.setMap(null);}
+				window.parent.document.getElementById('EndExit').innerHTML = 'End Point:';
+				document.getElementById("end").value = '';
+				endExitMile = '';
+				endPoint = '';
+			} else {
+				if (document.getElementById("start").value != "") {startMarker.setMap(null);}
+				window.parent.document.getElementById('StartExit').innerHTML = 'Start Point:';
+				document.getElementById("start").value = '';
+				startExitMile = ''
+				startPoint = '';
+			}
+			window.parent.document.getElementById('TollPlazas').innerHTML = '';
+			window.parent.document.getElementById('TollPlazas').style.visibility = "hidden";
+			window.parent.document.getElementById('MileageMsg').innerHTML = ''
+			window.parent.document.getElementById('TripCost').innerHTML = "Trip Cost:  $0.00";
+			window.parent.document.getElementById('sunPassSavingsMsg').style.visibility = "hidden";
+			clearRouteHighlighting(); //Clear any route highlighting that may have occured
+		}
+		
+		function clearRouteHighlighting(){
+			//Clear any route highlighting
+			if (routeLayer1.getMap()) {
+				routeLayer1.setOptions({
+				  query: {
+					select: 'geometry',
+					from: mySectionsTable,
+					where: "name = ''"
+				  }
+				});
+			}
+			
+			//Clear any route highlighting if 2 routes were used
+			if (routeLayer2.getMap()){
+				routeLayer2.setOptions({
+				  query: {
+					select: 'geometry',
+					from: mySectionsTable,
+					where: "name = ''"
+				  }
+				});
+			}
+		}
+		
+		function setMapToSystem(mySystem){
+			var image;
+			window.parent.document.getElementById('UserInst').style.visibility = "hidden";
+			switch(mySystem)
+			{
+			  // set zoom to X level and map center to X,Y coordinates based on region clicked
+			  case "Panhandle Bridges": systemZoomLevel=10; systemCenter=new google.maps.LatLng(30.464497,-86.709595); break;
+			  case "Orlando Area": systemZoomLevel=9; systemCenter=new google.maps.LatLng(28.385923,-81.471863); break;
+			  case "Tampa Area": systemZoomLevel=9; systemCenter=new google.maps.LatLng(28.272294,-82.543030); break;
+			  case "Polk Parkway": systemZoomLevel=11; systemCenter=new google.maps.LatLng(28.067578,-81.909943); break;
+			  case "Ticket System": systemZoomLevel=9; systemCenter=new google.maps.LatLng(27.662772,-80.875854); break;
+			  case "South Florida": systemZoomLevel=9; systemCenter=new google.maps.LatLng(26.192369,-80.885065); break; 
+			}
+			var pmtType = window.parent.document.getElementsByName("optPmtType");
+			for (var x = 0; x < pmtType.length; x ++) {	
+			  if (pmtType[x].checked) {
+				if (x==0){
+					//SunPass
+					filterSunPassOnly(1);
+				} else {
+					//Cash or Toll by Plate
+					filterSunPassOnly(3);
+				}
+				
+			  }
+			}
+			map.setZoom(systemZoomLevel);
+			map.setCenter(systemCenter);
+		}
+		
+		function setShields() {
+			image = {
+				scaledSize: new google.maps.Size(100,30),anchor: new google.maps.Point(-5,0),
+				url: "images/589-Suncoast-Parkway.png"
+			};
+			FS_Suncoast = new google.maps.Marker({
+				position: new google.maps.LatLng(28.466740, -82.434292),
+				map: map, icon: image, visible: false, zIndex: 2,
+				title: "Suncoast Parkway"
+			});
+			image = {
+				scaledSize: new google.maps.Size(100,30), anchor: new google.maps.Point(-10,0),
+				url: "images/589-Veterans-Expressway.png" 
+			};
+			FS_Veterans = new google.maps.Marker({
+				position: new google.maps.LatLng(28.058295,  -82.518734),  
+				map: map, icon: image, visible: false, zIndex: 2,
+				title: "Veterans Expressway"
+			});
+			image = {
+				scaledSize: new google.maps.Size(100,30), anchor: new google.maps.Point(-10,0),
+				url: "images/570-Polk-Parkway.png"
+			};
+			FS_Polk = new google.maps.Marker({
+				position: new google.maps.LatLng(27.972691,-81.911337),  
+				map: map, icon: image, visible: false, zIndex: 2,
+				title: "Polk Parkway"
+			});
+			image = {
+				scaledSize: new google.maps.Size(100,30), anchor: new google.maps.Point(-10,0),
+				url: "images/528-Beachline-Expressway.png"
+			};
+			FS_Beachline = new google.maps.Marker({
+				position: new google.maps.LatLng(28.472565, -81.308728),  
+				map: map, icon: image, visible: false, zIndex: 2,
+				title: "Beachline Expressway"
+			});
+			image = {
+				scaledSize: new google.maps.Size(100,30), anchor: new google.maps.Point(-10,0),
+				url: "images/417-Seminole-Expressway.png"
+			};
+			FS_Seminole = new google.maps.Marker({
+				position: new google.maps.LatLng(28.769258, -81.217262),  
+				map: map, icon: image, visible: false, zIndex: 2,
+				title: "Seminole Expressway"
+			});
+			image = {
+				scaledSize: new google.maps.Size(22.5,27.5), anchor: new google.maps.Point(-10,0),
+				url: "images/Mainline-Logo.png"
+			};
+			FS_Mainline1 = new google.maps.Marker({
+				position: new google.maps.LatLng(28.643782, -81.744157),  
+				map: map, icon: image, visible: false, zIndex: 2,
+				title: "Turnpike Mainline"
+			});
+			FS_Mainline2 = new google.maps.Marker({
+				position: new google.maps.LatLng(27.811845, -80.953854),  
+				map: map, icon: image, visible: false, zIndex: 2,
+				title: "Turnpike Mainline"
+			});
+			FS_Mainline3 = new google.maps.Marker({
+				position: new google.maps.LatLng(27.054138, -80.194837),  
+				map: map, icon: image, visible: false, zIndex: 2,
+				title: "Turnpike Mainline"
+			});
+			image = {
+				scaledSize: new google.maps.Size(23,30), //anchor: new google.maps.Point(-10,0),
+				url: "images/869.png"
+			};
+			FS_Sawgrass = new google.maps.Marker({
+				position: new google.maps.LatLng(26.209115, -80.339677),  
+				map: map, icon: image, visible: false, zIndex: 2,
+				title: "Sawgrass Expressway"
+			});			
+			image = {
+				scaledSize: new google.maps.Size(23,30), //anchor: new google.maps.Point(-10,0),
+				url: "images/429.png"
+			};
+			FS_WesternBeltway = new google.maps.Marker({
+				position: new google.maps.LatLng(28.353395, -81.675218),
+				map: map, icon: image, visible: false, zIndex: 2,
+				title: "Western Beltway"
+			});
+			image = {
+				scaledSize: new google.maps.Size(23,30), //anchor: new google.maps.Point(-10,0),
+				url: "images/417.png"
+			};
+			FS_SouthernConn = new google.maps.Marker({
+				position: new google.maps.LatLng(28.247749, -81.496772),   //28.288746,-81.518637
+				map: map, icon: image, visible: false, zIndex: 2,
+				title: "Southern Connector"
+			});
+			image = {
+				scaledSize: new google.maps.Size(78.75,23.63),anchor: new google.maps.Point(-5,0),
+				url: "images/I-4 Connector.png"
+			};
+			FS_Selmon = new google.maps.Marker({
+				position: new google.maps.LatLng(27.964651, -82.422245),
+				map: map, icon: image, visible: false, zIndex: 2,
+				title: "I-4 Connector"
+			});
+		}
+
+		function calcToll() {
+			if ((start.value != "") && (end.value != "")){
+				if (start.value==end.value){alert("Cant start and end in the same place!"); return false};
+				filterMyRoute();
+				calculatedToll = calculateToll();
+				
+				displayTollAmount();
+				
+			}
+		}
+
+		function displayTollAmount(){
+			var routeTollPlazas = "";
+			var pmtType = window.parent.document.getElementsByName("optPmtType");
+		
+			for (var x = 0; x < pmtType.length; x ++) {				
+			  if (pmtType[x].checked) {
+				if (x==2) { x=x-1;} //< this is to deal with toll by plate vs cash  Only have 2 amounts in arrary
+				myToll = calculatedToll[x];
+				sunPassSavings = parseFloat(calculatedToll[1].numOriginal)-parseFloat(calculatedToll[0].numOriginal);
+				window.parent.document.getElementById('sunPassSavingsMsg').style.visibility = "visible";
+				window.parent.document.getElementById('sunPassSavingsMsg').innerHTML = "You could save $" + parseFloat(sunPassSavings).toFixed(2) + " by using SunPass.";
+				//Display inline Toll Plazas CASH amounts
+				if (myInlineTollPlazasCASH.length > 0) {
+					window.parent.document.getElementById('StartExit').innerHTML = myInlineTollPlazasCASH[0][0];
+					for (var y = 1; y < myInlineTollPlazasCASH.length-1; y ++) {
+						if (y==1){
+							routeTollPlazas = myInlineTollPlazasCASH[y][0];
+						}else{
+							routeTollPlazas = routeTollPlazas + "<br>" + myInlineTollPlazasCASH[y][0];
+						}
+					}
+					window.parent.document.getElementById('EndExit').innerHTML = myInlineTollPlazasCASH[y][0];
+				} else {
+					window.parent.document.getElementById('StartExit').innerHTML = 'Start Point:';
+					window.parent.document.getElementById('EndExit').innerHTML = 'End Point:';
+				}
+				if (x==1) { x=2;}
+			  } else {
+				if (myInlineTollPlazas.length > 0) {
+					window.parent.document.getElementById('StartExit').innerHTML = myInlineTollPlazas[0][0];
+					for (var y = 1; y < myInlineTollPlazas.length-1; y ++) {
+						if (y==1){
+							routeTollPlazas = myInlineTollPlazas[y][0];
+						}else{
+							routeTollPlazas = routeTollPlazas + "<br>" + myInlineTollPlazas[y][0];
+						}
+					}
+					window.parent.document.getElementById('EndExit').innerHTML = myInlineTollPlazas[y][0];
+				} else {
+					window.parent.document.getElementById('StartExit').innerHTML = 'Start Point:';
+					window.parent.document.getElementById('EndExit').innerHTML = 'End Point:';
+				}
+				window.parent.document.getElementById("sunPassSavingsMsg").style.visibility = "hidden";
+				
+			  }
+			} 
+			window.parent.document.getElementById('TollPlazas').innerHTML = routeTollPlazas;  
+			window.parent.document.getElementById('TollPlazas').style.visibility = "visible";
+			
+			if (myInlineTollPlazas.length > 0) {
+				window.parent.document.getElementById('MileageMsg').innerHTML = '&nbsp;&nbsp;(' + parseFloat(calculatedToll[2].numOriginal).toFixed(2) + ' miles)';
+				window.parent.document.getElementById('TripCost').innerHTML = "Trip Cost:  " + myToll.toFormatted();
+			} else {
+				window.parent.document.getElementById('MileageMsg').innerHTML = '&nbsp;&nbsp;(0 miles)';
+				window.parent.document.getElementById('TripCost').innerHTML = "Trip Cost:  0.00";
+				clearRouteDetails("Start");
+				clearRouteDetails("End");
+			}
+			// Force Toll Calc Menu open whenever this is called
+			window.parent.$("#accordion").accordion({active:"h3:first"});
+			return myToll;
+		}
+		
+		function changeAxleFactor(myAxleCount,recalc){
+			updateAxleData(myAxleCount);
+			if (recalc) { calcToll(); }
+		}
+
+		function filterSunPassOnly(spOnly) {
+			// if spOnly==3 (That indicates the CASH option is clicked, so eliminate the SunPass only ramps
+			if (spOnly==3){
+				//First, set up the SP Exits WHERE clause string
+				sunPassOnly = "ExitNum not equal to '255' AND ExitNum not equal to '138' AND ExitNum not equal to '107' AND ExitNum not equal to '98' AND ExitNum not equal to '240'";
+				//var spOnlyExits = "Consulate Dr., Becker Rd., S.R. 710, Jog Rd., NW 106th St., Kissimmee Park Rd., NW 74th St.";
+				var spOnlyExits = "Consulate Dr., Becker Rd., S.R. 710, Jog Rd., Kissimmee Park Rd.";
+				var whichExit = ""
+				var whichPoint = ""
+				//now if the user has selected a SunPass only ramp as either the start or end, REMOVE the marker and reset the Start/End point
+				if (startMarker != undefined) {
+					//Exit 98 Filters
+					var x = spOnlyExits.indexOf(startPoint)
+					var y = spOnlyExits.indexOf(endPoint)
+					if ((x > -1) || (y > -1)) {
+						if (x > -1) {
+							whichExit = startPoint
+							whichPoint = "starting"
+						} else {
+							whichExit = endPoint
+							whichPoint = "ending"
+						}
+						switch(whichExit)
+						{
+						  case "Consulate Dr.": 		alert("Exit 255 - Consulate Drive is only available for SunPass customers. \nYour selection of Consulate Dr. has been cleared and the toll amount reset to $0.00 \nPlease select another " + whichPoint + " point."); break;
+						  case "Becker Rd.": 			alert("Exit 138 - Becker Road is only available for SunPass customers. \nYour selection of Becker Rd. has been cleared and the toll amount reset to $0.00 \nPlease select another " + whichPoint + " point."); break;
+						  case "S.R. 710": 				alert("Exit 107 - S.R. 710 is only available for SunPass customers. \nYour selection of S.R. 710 has been cleared and the toll amount reset to $0.00 \nPlease select another " + whichPoint + " point."); break;
+						  case "Jog Rd.": 				alert("Exit 98 - Jog Road is only available for SunPass customers. \nYour selection of Jog Rd. has been cleared and the toll amount reset to $0.00 \nPlease select another " + whichPoint + " point."); break;
+						  case "Kissimmee Park Rd.": 	alert("Exit 240 - Kissimmee Park Road is only available for SunPass customers. \nYour selection of Kissimmee Park Rd. has been cleared and the toll amount reset to $0.00 \nPlease select another " + whichPoint + " point."); break;
+						  //default: Do Nothing;
+						}
+					}
+					if (spOnlyExits.search(startPoint) > -1){
+						startMarker.setMap(null);
+						clearRouteDetails("End")
+					}
+				}
+				if (endMarker != undefined) {
+					if (spOnlyExits.search(endPoint) > -1){
+						endMarker.setMap(null);
+						clearRouteDetails("Start")
+					}				
+				}
+			} else {
+				sunPassOnly = "";
+			}
+			filterOptions();
+		}
+
+		function filterMyRoute(){
+			var myFac = "";
+			var myDir = 0;
+			var myHighNum = 0;
+			var myLowNum = 0;
+			var myExits = "";
+			var whereCon = "";
+var routeWhere = {"firstWhere": 'N/A','secondWhere': 'N/A' };
+
+
+switch(startFacilityID)
+			{
+				case "ALLIGATOR": 	myFac = "ALLIGATOR ALLEY"; break;
+				case "B": 			myFac = "BEACHLINE WEST EXPRESSWAY"; break;
+				case "H": 			myFac = "HEFT"; break;
+				case "M": 			myFac = "TURNPIKE MAINLINE"; break;
+				case "MSPUR": 		myFac = "TURNPIKE MAINLINE"; break;
+				case "P": 			myFac = "POLK PARKWAY"; break;
+				case "SC": 			myFac = "SUNCOAST PARKWAY"; break;
+				case "SCONN": 		myFac = "SOUTHERN CONNECTOR"; break;
+				case "SEM": 		myFac = "SEMINOLE EXPRESSWAY"; break;
+				case "SG":			myFac = "SAWGRASS EXPRESSWAY";break;
+				case "V": 			myFac = "VETERANS EXPRESSWAY"; break;
+				case "WB": 			myFac = "WESTERN BELTWAY"; break;
+				case "S": 			myFac = "SELMON"; break;
+			}	
+
+			myDir = routeStartNumber - routeEndNumber;
+			if (myDir < 0) {
+				//myHighNum = endExitNumber.replace ( /[^0-9]/g, '' );
+				myHighNum = routeEndNumber;
+				//myLowNum = startExitNumber.replace ( /[^0-9]/g, '' );
+				myLowNum = routeStartNumber;
+			} else {
+				//myHighNum = startExitNumber.replace ( /[^0-9]/g, '' 
+				myHighNum = routeStartNumber;
+				//myLowNum = endExitNumber.replace ( /[^0-9]/g, '' 
+				myLowNum = routeEndNumber;
+			}
+			
+			//Check startFacilityID and endFacilityID 
+			if (startFacilityID == endFacilityID) {
+				//Same Facility
+				if (startFacilityID == 'S') {
+					switch(startPoint){
+					  case "Port to I-4 EB or WB (Trucks Only)":
+						if (endPoint=="I-4 EB to Selmon EB or Port") {
+							//T Move East
+							whereCon = "TP_SEC_ID_2 IN ('135','137')";
+						} else {
+							//T Move West
+							whereCon = "TP_SEC_ID_2 IN ('133','140','141')";
+						}
+						break;
+					  case "I-4 EB to Selmon EB or Port":
+						if (endPoint=="Selmon WB to I-4 WB") {
+							// Z Move
+							whereCon = "TP_SEC_ID_2 IN ('135','136')";
+						} else {
+							// T Move East
+							whereCon = "TP_SEC_ID_2 IN ('135','137')";
+						}
+						break;
+					  case "I-4 WB to Selmon WB or Port":
+						if (endPoint=="Selmon EB to I-4 EB") {
+							//S Move
+							whereCon = "TP_SEC_ID_2 IN ('132','133','134')";
+						} else {
+							//T Move West
+							whereCon = "TP_SEC_ID_2 IN ('133','140','141')";
+						}
+						break;
+					  case "Selmon EB to I-4 EB":  //S Move
+					    whereCon = "TP_SEC_ID_2 IN ('132','133','134')";
+						break;
+					  case "Selmon WB to I-4 WB":  //Z Move
+					    whereCon = "TP_SEC_ID_2 IN ('135','136')";
+						break;
+					}
+
+				} else {
+
+					whereCon = "name = '" + myFac + "'";
+					whereCon = whereCon + " AND High_Num <= " + myHighNum;
+					whereCon = whereCon + " AND Low_Num >= " + myLowNum;
+					if(myHighNum == 47){whereCon = whereCon + " AND Highlight_ID not equal to 23";}
+				}
+				showMyRoute1(whereCon); routeWhere.firstWhere = whereCon;
+				//Clear any Route 2 that may have been turned on
+				whereCon = "name = ''";
+				showMyRoute2(whereCon); routeWhere.secondWhere = whereCon;
+			} else {
+				//Different Facilities
+				switch(endFacilityID)
+				{
+					case "B":
+						whereCon = "name = 'BEACHLINE WEST EXPRESSWAY'"
+						if  (routeEndNumber < 5) { //Exits on Beachline - West of Mainline
+							whereCon = whereCon + " AND High_Num <= 4 AND Low_Num >= " + endExitNumber;
+						} else {
+							whereCon = whereCon + " AND High_Num = 8";
+						}
+						showMyRoute1(whereCon); routeWhere.firstWhere = whereCon;
+						switch(startFacilityID)
+						{
+							case "M":
+								whereCon = "name = 'TURNPIKE MAINLINE'"
+								if (routeStartNumber > 254) { 	//Exits North of Beachline
+									whereCon = whereCon + " AND High_Num <= " + routeStartNumber + " AND Low_Num >= 255";
+								} else {  						//Exits South of Beachline
+									whereCon = whereCon + " AND High_Num <= 254 AND Low_Num >= " + routeStartNumber;
+								}
+								showMyRoute2(whereCon); routeWhere.secondWhere = whereCon;
+								break;
+							case "H":
+								whereCon = "name IN('TURNPIKE MAINLINE', 'HEFT') AND High_Num <= 254 AND Low_Num >= " + routeStartNumber + " AND Exclude = ''";
+								showMyRoute2(whereCon); routeWhere.secondWhere = whereCon;
+								break;
+							case "SG":
+								whereCon = "TP_SEC_ID_2 IN (57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,"; //ALL Mainline Exits on this route
+								switch (routeStartNumber){
+									case "0": whereCon = whereCon + "47,48,49,50,51,52,53,54,55,56,3)"; break;
+									case "1": whereCon = whereCon + "48,49,50,51,52,53,54,55,56,3)"; break; //Actually this is Exit 1A
+									case "2": whereCon = whereCon + "49,50,51,52,53,54,55,56,3)"; break;	//Actually this is Exit 1B
+									case "3": whereCon = whereCon + "50,51,52,53,54,55,56,3)"; break;
+									case "5": whereCon = whereCon + "51,52,53,54,55,56,3)"; break;
+									case "8": whereCon = whereCon + "52,53,54,55,56,3)"; break;
+									case "11": whereCon = whereCon + "53,54,55,56,3)"; break;
+									case "14": whereCon = whereCon + "54,55,56,3)"; break;
+									case "15": whereCon = whereCon + "55,56,3)"; break;
+									case "18": whereCon = whereCon + "55,56)"; break;
+									case "19": whereCon = whereCon + "56)"; break;
+								}
+								showMyRoute2(whereCon); routeWhere.secondWhere = whereCon;
+								break;
+							case "MSPUR":
+								whereCon = "name = 'TURNPIKE MAINLINE' AND High_Num <= 254 AND Low_Num >= " + routeStartNumber + " AND Exclude = ''";
+								showMyRoute2(whereCon); routeWhere.secondWhere = whereCon;
+								break;
+						}
+						break;
+					case "H":  //End on the HEFT
+						whereCon = "name = 'HEFT' AND Low_Num >= " + routeEndNumber + " AND Exclude = ''";
+						showMyRoute1(whereCon); routeWhere.firstWhere = whereCon;
+						switch (startFacilityID) {
+							case "B":
+								whereCon = "TP_SEC_ID_2 IN (38,39,40,41,42,43,44,45,46,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,"; //ALL Mainline Exits between HEFT and Beachline
+								switch (routeStartNumber){ //Exits on Beachline
+									case "0": whereCon = whereCon + "86,87,88,89)"; break;
+									case "1": whereCon = whereCon + "87,88,89)"; break;
+									case "2": whereCon = whereCon + "88,89)"; break;
+									case "3": whereCon = whereCon + "89)"; break;
+									case "4": whereCon = whereCon + "89)"; break;
+									case "8": whereCon = whereCon + "1)"; break;
+								}
+								showMyRoute2(whereCon); routeWhere.secondWhere = whereCon;
+								break;
+							case "M":
+								whereCon = "name = 'TURNPIKE MAINLINE' AND High_Num <= " + routeStartNumber + " AND Exclude = ''";;
+								showMyRoute2(whereCon); routeWhere.secondWhere = whereCon;
+								break;
+							case "MSPUR":
+								switch (routeStartNumber){
+									case "0": whereCon = "TP_SEC_ID_2 IN (36,37)"; break;
+									case "2": whereCon = "TP_SEC_ID_2 IN (37)"; break;
+								}
+								showMyRoute2(whereCon); routeWhere.secondWhere = whereCon;
+								break;								
+							case "SG":
+								whereCon = "TP_SEC_ID_2 IN (38,39,40,41,42,43,44,45,46,"; //ALL Mainline Exits on this route
+								switch (routeStartNumber){
+									case "0": whereCon = whereCon + "47,48,49,50,51,52,53,54,55,56,3)"; break;
+									case "1": whereCon = whereCon + "48,49,50,51,52,53,54,55,56,3)"; break; //Actually Exit 1A
+									case "2": whereCon = whereCon + "49,50,51,52,53,54,55,56,3)"; break;	//Actually Exit 1B
+									case "3": whereCon = whereCon + "50,51,52,53,54,55,56,3)"; break;
+									case "5": whereCon = whereCon + "51,52,53,54,55,56,3)"; break;
+									case "8": whereCon = whereCon + "52,53,54,55,56,3)"; break;
+									case "11": whereCon = whereCon + "53,54,55,56,3)"; break;
+									case "14": whereCon = whereCon + "54,55,56,3)"; break;
+									case "15": whereCon = whereCon + "55,56,3)"; break;
+									case "18": whereCon = whereCon + "55,56)"; break;
+									case "19": whereCon = whereCon + "56)"; break;
+								}
+								showMyRoute2(whereCon); routeWhere.secondWhere = whereCon;
+								break;
+						}
+						break;
+					case "M": //End on the Mainline
+						switch(startFacilityID)
+						{
+							case "B":
+								if (routeEndNumber > 254) { 	//Exits North of Beachline
+									whereCon = "name = 'TURNPIKE MAINLINE' AND High_Num <= " + routeEndNumber + " AND Low_Num >= 255";
+								} else {  						//Exits South of Beachline
+									whereCon = "name = 'TURNPIKE MAINLINE' AND High_Num <= 254 AND Low_Num >= " + routeEndNumber;
+								}
+								showMyRoute1(whereCon); routeWhere.firstWhere = whereCon;
+								whereCon = "name = 'BEACHLINE WEST EXPRESSWAY'"
+								if  (routeStartNumber < 5) { 	//Exits on Beachline - West of Mainline
+									whereCon = whereCon + " AND High_Num <= 4 AND Low_Num >= " + routeStartNumber;
+								} else {
+									whereCon = whereCon + " AND High_Num = 8";
+								}
+								showMyRoute2(whereCon); routeWhere.secondWhere = whereCon;
+								break;
+							case "H":
+								whereCon = "name = 'HEFT' AND High_Num <= 47 AND Low_Num >= " + routeStartNumber;
+								showMyRoute1(whereCon); routeWhere.firstWhere = whereCon;
+								whereCon = "name = 'TURNPIKE MAINLINE' AND High_Num <= " + routeEndNumber + " AND Low_Num >= 47";
+								showMyRoute2(whereCon); routeWhere.secondWhere = whereCon;
+								break;
+							case "SG":
+								whereCon = "name = 'SAWGRASS EXPRESSWAY' AND High_Num <= 47 AND Low_Num >= " + routeStartNumber;
+								showMyRoute1(whereCon); routeWhere.firstWhere = whereCon;
+								if (routeEndNumber > 71) { 		//Exits North of Beachline
+									whereCon = "name = 'TURNPIKE MAINLINE' AND High_Num <= " + routeEndNumber + " AND Low_Num >= 71";
+								} else {  						//Exits South of Beachline
+									whereCon = "name = 'TURNPIKE MAINLINE' AND High_Num <= 71 AND Low_Num >= " + routeEndNumber;
+								}
+								showMyRoute2(whereCon); routeWhere.secondWhere = whereCon;
+								break;
+							case "MSPUR":
+								whereCon = "name = 'TURNPIKE MAINLINE' AND Low_Num >= " + routeStartNumber + " AND High_Num <= " + routeEndNumber;
+								showMyRoute2(whereCon); routeWhere.secondWhere = whereCon;
+								break;
+						}
+						break;
+					case "MSPUR": //End on the SPUR						
+						switch(startFacilityID)
+						{
+							case "M":
+								whereCon = "name = 'TURNPIKE MAINLINE' AND Low_Num >= " + routeEndNumber + " AND High_Num <= " + routeStartNumber;
+								showMyRoute1(whereCon); routeWhere.firstWhere = whereCon;
+								break;
+							case "B":
+								whereCon = "name = 'TURNPIKE MAINLINE' AND High_Num <= 254 AND Low_Num >= " + routeEndNumber + " AND Exclude = ''";
+								showMyRoute1(whereCon); routeWhere.firstWhere = whereCon;
+								whereCon = "name = 'BEACHLINE WEST EXPRESSWAY'"
+								if  (routeStartNumber < 5) { 	//Exits on Beachline - West of Mainline
+									whereCon = whereCon + " AND High_Num <= 4 AND Low_Num >= " + routeStartNumber;
+								} else {
+									whereCon = whereCon + " AND High_Num = 8";
+								}
+								showMyRoute2(whereCon); routeWhere.secondWhere = whereCon;
+								break;
+							case "H":
+								whereCon = "name = 'HEFT' AND High_Num <= 47 AND Low_Num >= " + routeStartNumber;
+								showMyRoute1(whereCon); routeWhere.firstWhere = whereCon;
+								whereCon = "name = 'TURNPIKE MAINLINE' AND High_Num <= 47 AND Low_Num >= " + routeEndNumber;
+								showMyRoute2(whereCon); routeWhere.secondWhere = whereCon;
+								break;
+							case "SG":
+								whereCon = "name = 'SAWGRASS EXPRESSWAY' AND High_Num <= 47 AND Low_Num >= " + routeStartNumber;
+								showMyRoute1(whereCon); routeWhere.firstWhere = whereCon;
+								whereCon = "name = 'TURNPIKE MAINLINE' AND High_Num <= 71 AND Low_Num >= " + routeEndNumber;
+								showMyRoute2(whereCon); routeWhere.secondWhere = whereCon;
+								break;
+						}
+						break;
+
+					case "SC": 	//End on the Suncoast
+						whereCon = "name in ('SUNCOAST PARKWAY','VETERANS EXPRESSWAY') AND High_Num <= " + myHighNum + " AND Low_Num >= " + myLowNum + " AND Exclude = ''"
+						showMyRoute1(whereCon); routeWhere.firstWhere = whereCon;
+						break;
+						
+					case "SG": 	 //End on the Sawgrass
+						
+						whereCon = "TP_SEC_ID_2 IN ("; //ALL Mainline Exits between Sawgrass and Beachline
+						switch (routeEndNumber){
+							case "0": whereCon = whereCon + "47,48,49,50,51,52,53,54,55,56,3)"; break;
+							case "1": whereCon = whereCon + "48,49,50,51,52,53,54,55,56,3)"; break; //1 is actually 1A
+							case "2": whereCon = whereCon + "49,50,51,52,53,54,55,56,3)"; break;	//2 is actually 1B
+							case "3": whereCon = whereCon + "50,51,52,53,54,55,56,3)"; break;
+							case "5": whereCon = whereCon + "51,52,53,54,55,56,3)"; break;
+							case "8": whereCon = whereCon + "52,53,54,55,56,3)"; break;
+							case "11": whereCon = whereCon + "53,54,55,56,3)"; break;
+							case "14": whereCon = whereCon + "54,55,56,3)"; break;
+							case "15": whereCon = whereCon + "55,56,3)"; break;
+							case "18": whereCon = whereCon + "55,56)"; break;
+							case "19": whereCon = whereCon + "56)"; break;
+						}
+						showMyRoute1(whereCon); routeWhere.firstWhere = whereCon;
+						switch(startFacilityID)
+						{
+							case "M":
+								whereCon = "name = 'TURNPIKE MAINLINE'"
+								if (routeStartNumber > 71) { 	//Exits North of Sawgrass
+									whereCon = whereCon + " AND High_Num <= " + routeStartNumber + " AND Low_Num >= 71";
+								} else {  						//Exits South of Sawgrass
+									whereCon = whereCon + " AND High_Num <= 71 AND Low_Num >= " + routeStartNumber;
+								}
+								showMyRoute2(whereCon); routeWhere.secondWhere = whereCon;
+								break;
+							case "B":
+								whereCon = "TP_SEC_ID_2 IN (57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,"; //ALL Mainline Exits between Sawgrass and Beachline
+								switch (routeStartNumber){ //Exits on Beachline
+									case "0": whereCon = whereCon + "86,87,88,89)"; break;
+									case "1": whereCon = whereCon + "87,88,89)"; break;
+									case "2": whereCon = whereCon + "88,89)"; break;
+									case "3": whereCon = whereCon + "89)"; break;
+									case "4": whereCon = whereCon + "89)"; break;
+									case "8": whereCon = whereCon + "1)"; break;
+								}
+								showMyRoute2(whereCon); routeWhere.secondWhere = whereCon;
+								break;
+							case "H":
+								whereCon = "TP_SEC_ID_2 IN (38,39,40,41,42,43,44,45,46,"; //ALL Mainline Exits between HEFT and Sawgrass
+								switch (routeStartNumber){ //Exits on HEFT
+									case "0": whereCon = whereCon + "14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,10)"; break;
+									case "2": whereCon = whereCon + "15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,10)"; break;
+									case "5": whereCon = whereCon + "16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,10)"; break;
+									case "6": whereCon = whereCon + "17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,10)"; break;
+									case "9": whereCon = whereCon + "18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,10)"; break;
+									case "11": whereCon = whereCon + "19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,10)"; break;
+									case "12": whereCon = whereCon + "20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,10)"; break;
+									case "13": whereCon = whereCon + "21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,10)"; break;
+									case "16": whereCon = whereCon + "22,23,24,25,26,27,28,29,30,31,32,33,34,35,10)"; break;
+									case "17": whereCon = whereCon + "23,24,25,26,27,28,29,30,31,32,33,34,35,10)"; break;
+									case "19": whereCon = whereCon + "24,25,26,27,28,29,30,31,32,33,34,35,10)"; break;
+									case "20": whereCon = whereCon + "25,26,27,28,29,30,31,32,33,34,35,10)"; break;
+									case "23": whereCon = whereCon + "26,27,28,29,30,31,32,33,34,35,10)"; break;
+									case "25": whereCon = whereCon + "27,28,29,30,31,32,33,34,35,10)"; break;
+									case "26": whereCon = whereCon + "28,29,30,31,32,33,34,35,10)"; break;
+									case "27": whereCon = whereCon + "29,30,31,32,33,34,35,10)"; break;
+									case "29": whereCon = whereCon + "30,31,32,33,34,35,10)"; break;
+									case "31": whereCon = whereCon + "31,32,33,34,35,10)"; break;
+									case "34": whereCon = whereCon + "32,33,34,35,10)"; break;
+									case "35": whereCon = whereCon + "33,34,35,10)"; break;
+									case "43": whereCon = whereCon + "34,35,10)"; break;
+									case "47": whereCon = whereCon + "35,10)"; break;
+									case "1999": whereCon = whereCon + "10)"; break;
+								}
+								showMyRoute2(whereCon); routeWhere.secondWhere = whereCon;
+								break;
+							case "MSPUR":
+								whereCon = "name = 'TURNPIKE MAINLINE' AND High_Num <= 71 AND Low_Num >= " + routeStartNumber;
+								showMyRoute2(whereCon); routeWhere.secondWhere = whereCon;
+								break;
+						}
+						break;
+					case "V": 	//End on Veterans		
+						whereCon = "name in ('SUNCOAST PARKWAY','VETERANS EXPRESSWAY') AND High_Num <= " + myHighNum + " AND Low_Num >= " + myLowNum + " AND Exclude = ''"
+						showMyRoute1(whereCon); routeWhere.firstWhere = whereCon;
+						break;
+
+				}
+				
+			}
+					
+					
+			//	Feb 2014 - Systems began to load on TOP of Exits making the exits unclickable
+			//	Set both to Null
+			//	M.Esser 2-20-2014
+			//turnpikeSystemLayer.setMap(null);  Commented Out March 2014 per TP Officials to eleiminate click issue
+			turnpikeExitsLayer.setMap(null);
+					
+			turnpikeExitsLayer.setOptions({
+			  query: {
+				select: 'geometry',
+				from: myTable,
+				where: myNewWhere
+				}
+			});
+			//	Then reload in correct order
+			//	M.Esser 2-20-2014
+			turnpikeExitsLayer.setMap(map);
+			turnpikeExitsLayer.enableMapTips({
+			  select: "'ExitNum','Name','FacilityName'", // list of columns to query, typially need only one column.
+			  from: myTable, // fusion table name
+			  where: "FacilityType NOT EQUAL TO 'System'",
+			  geometryColumn: 'geometry', // geometry column name
+			  suppressMapTips: false, // optional, whether to show map tips. default false
+			  delay: 100, // milliseconds mouse pause before send a server query. default 300.
+			  tolerance: 8 // tolerance in pixel around mouse. default is 6.
+			});	
+			//turnpikeSystemLayer.setMap(map);  Commented Out March 2014 per TP Officials to eleiminate click issue
+        return routeWhere;
+		}
+		
+		function showMyRoute1 (whereCon) {
+			//When the entire route is in 1 Facility (ie: Mainline)
+			routeLayer1.setOptions({
+			  query: {
+				select: 'geometry',
+				from: mySectionsTable,
+				where: whereCon
+				}
+			});
+		}
+		
+		function showMyRoute2 (whereCon) {
+			//When the entire route is in 2 Facilities (ie: Mainline and Sawgrass)
+			routeLayer2.setOptions({
+			  query: {
+				select: 'geometry',
+				from: mySectionsTable,
+				where: whereCon
+				}
+			});
+		}
+
+		
+    </script>
+  </head>
+  <body onload="initialize()">
+    <div id="map_canvas" style="width:710px; height:695px"></div>
+	<input type="hidden" id="start" name="start" value="" /> 
+	<input type="hidden" id="end" name="end" value="" />
+	<div id="info"></div>
+  </body>
+</html>

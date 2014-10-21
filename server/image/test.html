@@ -1,0 +1,45 @@
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+
+<!-- Javascript -->
+<script type="text/javascript">
+    $(document).ready(function (){
+            /* set no cache */
+            $.getJSON(window.location.origin + "/api/schema/aboutData", function(data){
+                console.log(data.results[0].htmlData)
+                $("#about_facilities").html(data.results[0].htmlData.about_facilities);
+                $("#about_fl_turnpike").html(data.results[0].htmlData.about_fl_turnpike);
+                $("#about_payment").html(data.results[0].htmlData.about_payment);
+                $("#about_service_plazas").html(data.results[0].htmlData.about_service_plazas);
+                $("#about_using_toll_cal").html(data.results[0].htmlData.about_using_toll_cal);
+                $("#vehicle_desc").html(data.results[0].htmlData.vehicle_desc);
+
+
+
+
+
+//                var html = [];
+//
+//                /* loop through array */
+//                $.each(data, function(index, d){
+//                    html.push("Manufacturer : ", d.Manufacturer, ", ",
+//                            "Sold : ", d.Sold, ", ",
+//                            "Month : ", d.Month, "<br>");
+//                });
+//
+//
+//                $("#div381").html(html.join('')).css("background-color", "orange");
+            }).error(function(jqXHR, textStatus, errorThrown){ /* assign handler */
+                /* alert(jqXHR.responseText) */
+                alert("error occurred!");
+            });
+    });
+</script>
+
+<!-- HTML -->
+<a name="#ajax-getjson-example"></a>
+<div id="about_facilities"></div>
+<div id="about_fl_turnpike"></div>
+<div id="about_payment"></div>
+<div id="about_service_plazas"></div>
+<div id="about_using_toll_cal"></div>
+<div id="vehicle_desc"></div>

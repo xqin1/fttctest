@@ -1,0 +1,67 @@
+{
+  "name": "FTTC",
+  "version": "0.0.1",
+  "description": "Florida Turnpike Toll Calculator",
+  "keywords": [
+    "Toll",
+    "Calculator",
+    "Florida",
+    "Turnpike"
+  ],
+  "author": {
+    "name": "URS",
+    "email": "",
+    "url": ""
+  },
+  "homepage": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/URSCorp/Florida_Toll_Calculator.git"
+  },
+    "scripts": {
+        "start": "NODE_ENV=local ./node_modules/.bin/nodemon server.js",
+        "test": "NODE_ENV=local ./node_modules/.bin/nodemon ./node_modules/.bin/mocha -R spec test/test-*.js",
+        "test-coverage": "NODE_ENV=local ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha test/test-*.js"
+    },
+
+  "engines": {
+    "node": "0.10.x",
+    "npm": ">= 1.0.0"
+  },
+
+    "dependencies": {
+        "express": "~4.1.1",
+        "body-parser": "1.0.2",
+        "compression": "1.0.2",
+        "method-override": "~1.0.0",
+        "errorhandler": "~1.0.1",
+        "morgan": "~1.0.0",
+        "winston": "~0.7.3",
+        "async": "~0.7.x",
+<<<<<<< HEAD
+        "cors": "^2.2.0",
+        "xmldom": "latest",
+        "csv": "latest"
+=======
+        "cors": "^2.2.0"
+>>>>>>> 0644e21078d3ef705dd8c12a8c18e06fdad4c10e
+    },
+    "devDependencies": {
+        "supertest": "~0.11.x",
+        "should": "~3.3.1",
+        "mocha": "~1.18.x",
+        "nodemon": "~1.0.x",
+        "istanbul": "^0.2.6",
+        "gulp": "^3.5.6",
+        "gulp-mocha": "^0.4.1",
+        "gulp-clean": "^0.2.4",
+        "gulp-jshint": "^1.5.0",
+        "gulp-exec": "^1.0.4",
+        "gulp-jsdoc": "^0.1.4"
+    },
+
+  "bundleDependencies": [],
+
+  "private": true,
+  "main": "server.js"
+}

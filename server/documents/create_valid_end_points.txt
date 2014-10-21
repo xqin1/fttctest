@@ -1,0 +1,19 @@
+1. we use the existing logic and fusion table to generate the valid end points for every single start point
+2. to make it work, we'll have to modify the file TP_Map.html
+    //line 476-478
+    if (typeof(myInfoWindow) !== 'undefined'){
+        myInfoWindow.close();
+    }
+3. create file process_endpoint.js, located in folder 'server/scripts' and include it in TP_Map.html. We also need to include jQuery:
+    	<script type="text/javascript" src="js/jquery-1.7.2.min.js"></script>
+    	<script type="text/javascript" language="JavaScript" src="js/process_endpoints.js" ></script>
+4. load the original toll calculator site
+5. open Chome Developer, select gMapFrame(TP_Map.html) so that we can access to the new functions
+6. at console command, type getAllExits()
+7. copy the console output and paste it into file 'valide_end_points_raw.json' located in 'server/data' folder
+
+
+8. when the script run, there're a couple alert windown, just click 'ok'. These are for points which only have exit and can not be as start point.(in line 478-488)
+9. there're some reported impossible trips, such as this one: http://nodejsapi-maryland.rhcloud.com/api/routing/route/startFacilityID/H/startExitNum/16/endFacilityID/M/endExitNum/240/axleCount/2
+the data is really from web application and we have to manually remove the trip from valid_end_points.json file. We'll run validateEndPoint.js for this job, which will generate
+a new valid_end_points.json file.

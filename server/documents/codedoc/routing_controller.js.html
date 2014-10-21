@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Florida Turnpike Enterprise API Docs Source: app/controllers/routing_controller.js</title>
+
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+	<link type="text/css" rel="stylesheet" href="styles/sunlight.default.css">
+
+	
+	<link type="text/css" rel="stylesheet" href="styles/site.journal.css">
+	
+</head>
+
+<body>
+<div class="container-fluid">
+	<div class="navbar navbar-fixed-top ">
+		<div class="navbar-inner">
+			<a class="brand" href="index.html">Florida Turnpike Enterprise API Docs</a>
+			<ul class="nav">
+				
+				<li class="dropdown">
+					<a href="modules.list.html" class="dropdown-toggle" data-toggle="dropdown">Modules<b
+						class="caret"></b></a>
+
+					<ul class="dropdown-menu ">
+						
+						<li>
+							<a href="module-apiresponse.html">apiresponse</a>
+						</li>
+						
+						<li>
+							<a href="module-app_schema_controller.html">app_schema_controller</a>
+						</li>
+						
+						<li>
+							<a href="module-app_schema_routes.html">app_schema_routes</a>
+						</li>
+						
+						<li>
+							<a href="module-crossdomain_header.html">crossdomain_header</a>
+						</li>
+						
+						<li>
+							<a href="module-routing_controller.html">routing_controller</a>
+						</li>
+						
+						<li>
+							<a href="module-routing_routes.html">routing_routes</a>
+						</li>
+						
+
+					</ul>
+				</li>
+				
+			</ul>
+		</div>
+	</div>
+
+	<div class="row-fluid">
+
+		
+			<div class="span12">
+				
+				<div id="main">
+					
+
+
+		<h1 class="page-title">Source: app/controllers/routing_controller.js</h1>
+    
+    <section>
+        <article>
+            <pre class="sunlight-highlight-javascript linenums">'use strict';
+/**
+ * A module that defines the response format.
+ * @module routing_controller
+ */
+var HEFT = JSON.parse('[["id","name"],["6220", "47 - NW 27th Avenue"],["6230", "43 - NW 57th Avenue"],["6410", "35 - Okeechobee Road"],["6411", "34 - NW 106th Street East"],["6412", "34 - NW 106th Street West"],["6400", "32 - OKEECHOBEE PLAZA"],["6401", "31 - NW 74th Street Northbound On"],["6431", "31 - NW 74th Street"],["6420", "29 - NW 41st Street"],["7330", "27 - NW 12th Street (Beacon Tradeport)"],["7340", "25 - US 41 (SW 8th Street) South"],["7341", "25 - US 41 (SW 8th Street) North"],["7350", "23 - SW 40th Street (Bird Road)"],["7400", "22 - BIRD ROAD PLAZA SOUTH"],["7402", "22 - BIRD ROAD PLAZA SOUTH ORT"],["7500", "22 - BIRD ROAD PLAZA NORTH"],["7501", "22 - BIRD ROAD PLAZA NORTH ORT"],["7521", "20 - N. Kendall Drive"],["7530", "19 - SW 120th Street"],["7540", "16 - Coral Reef Drive"],["7600", "10 - HOMESTEAD PLAZA"],["7601", "10 - HOMESTEAD PLAZA ORT NB"],["7602", "10 - HOMESTEAD PLAZA ORT SB"],["7620", "9 - Allapattah Road"],["7621", "5 - Biscayne Drive (SW 288th Street)"],["7622", "2 - Campbell Drive (SW 312th Street)"]]');
+
+/** Get the valid endpoints that are connected to the input startpoint
+* @param req - Input req object.  A startpointid param is required
+* @param res - This is the callback response, lastUpdated object is returned in the result.
+* @param next - Used to control flow, called once the function is ready to pass control.
+*
+* @returns {json} Returns an object with a key 'lastUpdated' and a value {datestamp}
+*/
+
+exports.getValidEndPointsByStartPoint = function(req, res, next) {
+    if(!req.params.startpointid){
+        //If there is no startpointid provided
+        req.statusCode = '400';
+        req.message = 'No start point was specified.  Please include a startpointid in your request.';
+    }
+    else{
+        //If there is a startpointid provided
+        var outArray = []
+        var itExists = 0;
+        for (var i = 0; i &lt; HEFT.length; i++) {
+            //Loop through the static dataset from above
+            if(req.params.startpointid == HEFT[i][0]){
+                //If the provided startpointid exists, set a variable to reflect that.
+                itExists = itExists + 1
+            }
+            else{
+                //For all the records in the startpointid input that match a value in the static data
+                if(HEFT[i][0] != 'id'){
+                    //For all records that are not the input startid, push them in to an array as long as its not the header array of the 2d array
+                	outArray.push(parseInt(HEFT[i][0]))
+                }
+            }
+        }
+        if(itExists != 0){
+            //If the startid matched a record in our static dataset, return the results in an array and a resule with the length of the number of records
+            req.result = outArray;
+            req.resultCount = HEFT.length;
+        }
+        else{
+            //If the itExists switch is never set, return a 400 status code and let the user know that record does not exist in the database
+            req.statusCode = '400';
+            req.message = 'Please select another Starting Point, that stating point does not exist.';
+        }
+        return next();
+    }
+}
+
+exports.getRoute = function(req, res, next){
+    //Example Route:  /api/routing/route/startPointID/1/endPointID/20/cartype/2
+	var cartype, startpointid, endpointid;
+    if(req.params.startpointid &amp;&amp; req.params.endpointid &amp;&amp; req.params.cartype){
+        //If the startpointid, endpointid, and cartype (axle) exists, do:
+    	startpointid = req.params.startpointid;
+    	endpointid = req.params.endpointid;
+        cartype = req.params.cartype;
+        if( (parseInt(startpointid) > 0) &amp;&amp; (parseInt(endpointid) > startpointid) &amp;&amp; (parseInt(cartype) > 0) ){
+            var myRoute = []
+            for(var i = 0; i &lt; (parseInt(endpointid) - parseInt(startpointid)); i++){
+                myRoute.push({name: i, lat: '10.0', lon: '-77'})
+            }
+            req.result = {
+                tripCost: calculateCost(startpointid, endpointid, cartype),
+                route: myRoute,
+                savings: '2'
+            }
+        }
+        else{
+
+        }
+    }
+    else{
+        //If any of the startpointid, endpointid, or cartype (axle) do not exist, return a message telling user to include all 3
+    	req.statusCode = '400';
+        req.message = 'Please specify startpointid, endpointid, and cartype.  Your request is missing required input.';
+    }
+    
+    function calculateCost(start, end, axles){
+        //object to pass in sunpass value.  Can be replaced later with logic to calculate the costs of each cash type
+        return {sunpass: '10', cash: '15', licenseplate: '20'};
+    }
+
+    return next()
+}</pre>
+        </article>
+    </section>
+
+
+
+
+
+				</div>
+
+				<div class="clearfix"></div>
+				<footer>
+					
+					
+		<span class="copyright">
+		Copyright Florida Turnpike Enterprise 2014
+		</span>
+					<br />
+					
+		<span class="jsdoc-message">
+		Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha5</a>
+		on Tue Jun 10 2014 09:13:06 GMT-0400 (EDT) using the <a href="https://github.com/terryweiss/docstrap">DocStrap template</a>.
+		</span>
+				</footer>
+			</div>
+
+			
+			<br clear="both">
+		</div>
+
+	</div>
+	<script src="scripts/sunlight.js"></script>
+	<script src="scripts/sunlight.javascript.js"></script>
+	<script src="scripts/sunlight-plugin.doclinks.js"></script>
+	<script src="scripts/sunlight-plugin.linenumbers.js"></script>
+	<script src="scripts/sunlight-plugin.menu.js"></script>
+	<script src="scripts/jquery.min.js"></script>
+	<script src="scripts/jquery.scrollTo.js"></script>
+	<script src="scripts/jquery.localScroll.js"></script>
+	<script src="scripts/bootstrap-dropdown.js"></script>
+	<script src="scripts/toc.js"></script>
+
+
+	<script>  Sunlight.highlightAll({lineNumbers:true,  showMenu: true, enableDoclinks :true}); </script>
+
+	<script>
+		$( function () {
+			$( "#toc" ).toc( {
+				selectors   : "h1,h2,h3,h4",
+				showAndHide : false,
+				scrollTo    : 60
+			} );
+			$( "#toc>ul" ).addClass( "nav nav-pills nav-stacked" );
+			$( "#main span[id^='toc']" ).addClass( "toc-shim" );
+
+		} );
+	</script>
+
+	
+
+</body>
+</html>

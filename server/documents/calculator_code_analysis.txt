@@ -1,0 +1,448 @@
+analysis of jsCalculations_2014.js
+
+--to line 182: xml doc manipulation
+
+line 180-182: determine BeeLineMainLineExit, which is Exit ID=254, FAcility_ID='M' and Mile_Point='208.302'
+
+line 185-212: function resetTollCalculator(): reset all variable to default
+
+line 214-286: function getStartingExitData(startName, startMile, startFacility)
+	get startingExit data from 'EXIT' section in XML
+line 289-365: get endEixt data from 'EXIT' section in XMl
+
+line 359-7838: function calculateToll()
+	//check start and end are not the same exit
+	//determine the travel direction
+if both are in the same facility
+	if both are NOT on mainline (startFacilityID != 'M' && endFacilityID )
+				EASTWEST: start at facilityIDs in ('P', 'B', 'ALLIGATOR', 'CROSSTOWN', 'EW')
+				NORTHSOURTH: start at other facilityIDs
+				
+				For EASTWEST:
+					if (startExitMile - endExitMile) > 0: go west
+						(except for 'ALLIGATOR', which decrease miles from east to west, the code use Mile*(-1) to address the issue)
+						these functions being called to get toll
+						//in-line-toll-plaza
+						getInlineToll_SunPass_West();
+						getInlineToll_Cash_West();
+						//in-line-toll-plaza Rate index
+						getInlineToll_SunPass_West_RI();
+						getInlineToll_Cash_West_RI();
+						//in-line-toll-plaza WesternBeltway
+						getInlineToll_SunPass_West_RI_WB();
+						getInlineToll_Cash_West_RI_WB();
+						//get start and end toll (for sunpass, cash and RI) from xml file
+					else
+						go east //calling similar functions to get toll data
+						
+				For NorthSouth
+					// for Veterans Expressway, Suncoast Parkway, Mainline, Souther Connector, Greeneway, Seminole Expressway, Western Beltway
+					if (startExitMile - endExitMile)>0
+						go South
+						//call function to get toll data
+					else
+						go North
+						//call function to get toll data
+		
+			//Ignore EVERYTHING about calculating tools for Selmon Connector
+			//Only toll point is the TOLL PLAZA in the center of it.  ALL Ramps are $0.00 Toll
+			//SunPass and Toll-By-Plate ONLY
+			if for Slemon Connector (facilityID == 'S')
+				all tolls are 0 except
+				inlineToll_RI = getInlineToll_Selmon();
+				CASH_inlineToll_RI = getInlineTollCASH_Selmon();
+				
+			//calculate Rate Indexed Toll Amounts
+			
+			//Sawgrass exits DO NOT charge per axles
+			if (startExitFacilityId == "SG" && endExitFacilityId == "SG") {
+				totalToll_RI = axleFactor * inlineToll_RI + (startToll_RI + endToll_RI)
+				CASH_totalToll_RI = axleFactor * CASH_inlineToll_RI + (CASH_startToll_RI + CASH_endToll_RI)
+			}
+			//for S connection, exit 'Port to I-4 EB or WB (trucks Only) not use axle factor
+			else if (startExitFacilityId == "S" && endExitFacilityId == "S") {
+						if ((startExitName=="Port to I-4 EB or WB (Trucks Only)")||(endExitName=="Port to I-4 EB or WB (Trucks Only)")) {
+							totalToll_RI=  (startToll_RI + endToll_RI + inlineToll_RI)
+							CASH_totalToll_RI= (CASH_startToll_RI + CASH_endToll_RI + CASH_inlineToll_RI)
+							mileage = 1.7;
+						} else {
+							totalToll_RI= axleFactor * (startToll_RI + endToll_RI + inlineToll_RI)
+							CASH_totalToll_RI= axleFactor * (CASH_startToll_RI + CASH_endToll_RI + CASH_inlineToll_RI)
+							mileage = 1;
+						}
+			//for Western Beltway
+			
+			else if (startExitFacilityId == "WB" && endExitFacilityId == "WB") {
+						totalToll_RI= (startToll_RI + endToll_RI + inlineToll_RI_WB) * axleFactor
+						CASH_totalToll_RI= (CASH_startToll_RI + CASH_endToll_RI + CASH_inlineToll_RI_WB) * axleFactor
+					}
+			//for all others
+			else
+					totalToll_RI= axleFactor * (startToll_RI + endToll_RI + inlineToll_RI)
+					CASH_totalToll_RI= axleFactor * (CASH_startToll_RI + CASH_endToll_RI + CASH_inlineToll_RI)
+			//line 578-594: return totalToll, along with milage
+	else //if both are on mainline
+		//line 596-621 determine start and exits location by the mile post
+		mp<42.188: south coin system
+		42.188<mp<189.218: ticket system
+		mp>189.218: North Coin System
+		
+		//line 630-905 : determine the toll based on start and exit location
+		//starts and end both at Ticket system
+			calculate ticketToll --
+		
+		
+			
+else //both are NOT in the same facility
+	//line 910 - 934
+	//check the start and end can not be as 'Polk Parkway' and 'Veterans Expressway'
+	//they are not interconnected
+	
+	//line 939 - 1146
+	// start at M, end at H, from Mainline to Heft
+	if starting exit is in ticket system
+		do stuff
+	else 
+		if starting exit is in north coin system
+			do stuff
+		if staring exit is in south coin system
+			do stuff
+	other stuff
+	
+	//line 1151 - 1370
+	//start at H, end at M
+	find in-line toll plazas along HEFT going north
+	if end exit is in ticket system
+		do stuff
+	else
+		if starting exit is in north coin system
+			do stuff
+		if staring exit is in south coin system
+			do stuff
+	
+	//line 1375 - 1597
+	//start at 'SG' and end at 'M'
+	
+	//line 1599 - 1842
+	//start at 'M' and end at 'SG'
+	
+	//line 1847 - 2117
+	//start at 'M' and end at 'B'
+	
+	//line 2118 - 2340
+	//start at 'B' and end at 'M'
+	
+	//line 2344 - 2515
+	//start at 'B' and exit at 'H'
+	
+	//line 2516 - 2689
+	//start at 'H' and exit at 'B'
+	
+	//line 2694 - 2870
+	//start at 'SG' and exit at 'B'
+	
+	//line 2871 - 3041
+	//start at 'B' and exit at 'SG'
+	
+	
+	//line 3046 - 3193
+	//start at 'SG' and exit at 'H'
+	
+	//line 3197 - 3346
+	//start at 'H' and exit at 'SG'
+	
+	//line 3351 - 3462
+	//start at 'MSPUR' and exit at 'H'
+	
+	//line 3464 - 3572
+	//start at 'H' and exit at 'MSPUR'
+	
+	//line 3577 - 3709
+	//start at 'MSPUR" and exit at 'SG'
+	
+	//line 3710 - 3840
+	//start at 'SG' and exit at 'MSPUR'
+	
+	//line 3845 - 3972
+	//start at 'MSPUR' and exit at 'B'
+	
+	//line 3793 - 4093
+	//start at 'B' and exit at 'MSPUR'
+	
+	//line 4098 - 4308
+	//start at 'MSPUR" and exit at 'M'
+	
+	//line 4313 - 4466
+	//start at 'M' and exit at 'MSPUR'
+	
+	//line 4471 - 4586
+	//start at 'SC' and exit at 'V'
+	
+	//line 4587 - 4702
+	//start at 'V' and exit at 'SC'
+	
+	//line 4708 - 4856
+	//start at 'B' and end at 'WB'
+	
+	//line 4858 - 4971
+	//start at 'WB' and travel either North or South
+	
+	//line 4976 - 5185
+	//start at 'M' and exit at 'WB'
+	
+	//line 5187 - 5403
+	//start at 'WB' and exit at 'M'
+	
+	//line 5408 - 5544
+	//start at 'WB' and exit at 'SG'
+	
+	//line 5546 - 5684
+	//start at 'SG' and exit at 'WB'
+	
+	//line 5689 - 5846
+	//start at 'MSPUR' and exit at 'WB'
+	
+	//line 5847 - 6010
+	//start at 'WB' and exit at 'MSPUR'
+	
+	//line 6016 - 6183
+	//start at 'WB' and exit at 'H'
+	
+	//line 6185 - 6339
+	//start at 'H' and exit at 'WB'
+	
+	//line 6347 - 6522
+	//start at 'M' and exit at 'EW'
+	
+	//line 6523 - 6719
+	//start at 'EW' and exit at 'M'
+	
+	//line 6725 - 6859
+	//start at 'EW' and exit at 'H'
+	
+	//line 6860 - 6997
+	//start at 'H' and exit at 'EW'
+	
+	//line 7002 - 7140
+	//start at 'SG' and exit at 'EW'
+	
+	//line 7141 - 7277
+	//start at 'EW' and exit at 'SG'
+	
+	//line 7283 - 7412
+	//start at 'MSPUR' and exit at 'EW'
+	
+	//line 7413 - 7546
+	//start at 'EW' and exit at 'MSPUR'
+	
+	//line 7552 - 7689
+	//start at 'EW' and exit at 'WB'
+	
+	//line 7691 - 7837
+	//start at 'WB' and travel either North or South
+	
+	
+	
+		
+//line 7839-7863
+	function getInlineToll_SunPass_South()
+		find travel direction by mile post
+		add inlineToll + sunpass_toll from "IN_LINE_TOLL_PLAZA" during the route
+		
+//line 7866-7878
+	function getInlineToll_SunPass_North()
+		find travel direction by mile post
+		add inlineToll + sunpass_toll from "IN_LINE_TOLL_PLAZA" during the route
+		
+//line 7880-7891
+	function getInlineToll_Cash_North()
+		find travel direction by mile post
+		add cash_inlineToll + cash_toll from "IN_LINE_TOLL_PLAZA" during the route
+
+//line 7893-7905
+	function getInlineToll_SunPass_West()
+		find travel direction by mile post
+		add inlineToll + sunpass_toll from "IN_LINE_TOLL_PLAZA" during the route	
+		
+//line 7907-7918
+	function getInlineToll_Cash_West()
+		find travel direction by mile post
+		add cash_inlineToll + cash_toll from "IN_LINE_TOLL_PLAZA" during the route
+		
+//line 7920-7932
+	function getInlineToll_SunPass_East()
+		find travel direction by mile post
+		add inlineToll + sunpass_toll from "IN_LINE_TOLL_PLAZA" during the route
+		
+//line 7934-7945
+	function getInlineToll_Cash_East()
+		find travel direction by mile post
+		add inlineToll + cash_toll from "IN_LINE_TOLL_PLAZA" during the route	
+		
+//line 7951-7991
+	function getInlineToll_SunPass_Sourth_RI()
+		if both start and exit on Sawgrass
+			use flat rate
+		else
+			use axleFactor (*axleFactor)
+		if startExit =  'Sunshine Skyway North Plaza' on 'SKYWAY'
+			inlineToll_RI = inlineToll_RI + tempToll
+		else
+			for plaza on south route(exclude FacilityID (WB, SKYWAY) and plazaname 'Bird Road North Toll Plaza')
+				inlineToll_RI = inlineToll_RI + tempToll
+		
+//line 7993-8033
+	function getInlineToll_Cash_Sourth_RI()
+		if both start and exit on Sawgrass
+			use flat rate
+		else
+			use axleFactor (*axleFactor)
+		if startExit =  'Sunshine Skyway North Plaza' on 'SKYWAY'
+			cash_inlineToll_RI = inlineToll_RI + tempToll
+		else
+			for plaza on south route(exclude FacilityID (WB, SKYWAY) and plazaname 'Bird Road North Toll Plaza')
+				cash_inlineToll_RI = cash_inlineToll_RI + tempToll		
+				
+//line 8035 - 8121
+function getInlineToll_SunPass_North_RI()
+			if both start and exit on Sawgrass
+				use flat rate
+			else
+				use axleFactor (*axleFactor)
+			if startExit =  'Sunshine Skyway South Plaza' on 'SKYWAY'
+				inlineToll_RI = inlineToll_RI + tempToll
+			else
+				for plaza on north route(exclude FacilityID (WB, SKYWAY) and plazaname 'Bird Road South Toll Plaza')
+					for plazaname='Bird Road North Toll Plaza'
+						tempToll = 1.02 (WHY???)
+					inlineToll_RI = inlineToll_RI + tempToll
+				
+function getInlineToll_Cash_North_RI()
+			if both start and exit on Sawgrass
+				use flat rate
+			else
+				use axleFactor (*axleFactor)
+			if startExit =  'Sunshine Skyway South Plaza' on 'SKYWAY'
+				CASH_inlineToll_RI = CASH_inlineToll_RI + tempToll
+			else
+				for plaza on north route(exclude FacilityID (WB, SKYWAY) and plazaname 'Bird Road South Toll Plaza')
+					for plazaname='Bird Road North Toll Plaza'
+						tempToll = 1.28 (WHY???)
+					inlineToll_RI = inlineToll_RI + tempToll
+		
+
+//line  8123 - 8223
+function getInlineToll_SunPass_west_RI()
+	calculate start toll, set to 0 if negative
+	loop through toll plazas for the same facility as startExit
+		if start along 'Alligator' facility and before Mile Post 25
+			pay toll at 'Alligator Alley East Plaza'
+		else
+			exclude 'WB'
+			inlineToll_RI = inlineToll_RI + tempToll
+			//Exit 14 on the Polk is tolled at the Central Toll Plaza and has a negative value to make the toll amount correct
+			// HOWEVER - to make the figures correct for the Toll Route shown on the left, we have to modify the amounts
+			if((startExitName=='S.R. 540/Winter Lake Rd.') && (tempPlazaName=='Central Toll Plaza'))
+					tempToll = tempToll + startToll_RI
+					if (tempToll < 0) { tempToll = tempToll * -1 }
+					myInlineTollPlazas[i] = [tempPlazaName + " - $" + parseFloat(tempToll * axleFactor).toFixed(2) , tempMile];
+			
+function getInlineToll_Cash_west_RI()
+//same logic as sunpass, just use cash rate
+
+//line 8225-8336
+function getInlineToll_SunPass_East_RI()
+	calculate start toll, set to 0 if negative
+	loop through toll plazas for the same facility as startExit
+		if start along 'Alligator' facility and after Mile Post 75
+			pay toll at 'Alligator Alley West Plaza'
+		else
+			exclude 'WB'
+			inlineToll_RI = inlineToll_RI + tempToll
+			//Exit 14 on the Polk is tolled at the Central Toll Plaza and has a negative value to make the toll amount correct
+			// HOWEVER - to make the figures correct for the Toll Route shown on the left, we have to modify the amounts
+			if((endExitName=='S.R. 540/Winter Lake Rd.') && (tempPlazaName=='Central Toll Plaza'))
+					tempToll = tempToll + startToll_RI
+					myPolkParkwayExit14Toll = tempToll + endToll_RI
+					myInlineTollPlazas[i] = [tempPlazaName + " - $0.00" , tempMile];
+			else
+					myInlineTollPlazas[i] = [tempPlazaName + " - $" + parseFloat(tempToll * axleFactor).toFixed(2) , tempMile];
+		if exit at 'S.R. 540/Winter Lake Rd.'
+			use myPolkParkwayExit14Toll as exit toll
+		else
+			check
+			
+function getInlineToll_Cash_west_RI()
+//same logic as sunpass, just use cash rate
+
+
+//line 8346 - 8656
+//for Western Beltway Toll Calculation
+function getInlineToll_SunPass_South_RI_WB()
+function getInlineToll_Cash_South_RI_WB()
+function getInlineToll_SunPass_North_RI_WB()
+function getInlineToll_Cash_North_RI_WB()
+function getInlineToll_SunPass_West_RI_WB()
+function getInlineToll_Cah_West_RI_WB()
+function getInlineToll_SunPass_East_RI_WB()
+function getInlineToll_Cash_East_RI_WB()
+
+//line 8665 - 8801
+//for SELMON CONNECTOR toll calculation
+function getInlineToll_Selmon()	
+function getInlineTollCash_Selmon()
+
+//line 8807-8895
+//Sunpass and call toll is calculated differently, here w is the array index for inlineTollPlaza
+function inLineMilePT(w)
+function inLineTempToll(w)
+function inLineTempToll_RI(w)
+function inLineTempToll_RI_WB(w)
+function inLineTempCashToll(w)
+function inLineTempCashToll_RI(w)
+function inLineTempCashToll_RI_WB(w)	
+	
+//line 8896 - 8919
+//functions to parse xml file to get information
+function inLineTempID(w)
+function inLineTempPlaza(w)
+function beeLineTrans_SP(BeeLineMainlineExit)
+function beeLineTrans_CA(BeeLineMainlineExit)
+function beeLineTrans_SP_RI(BeeLineMainlineExit)
+function beeLineTrans_CA_RI(BeeLineMainlineExit)
+	
+//line 8921 - 9025
+//calculate toll for beeLine
+function beeLine(startExitFacilityId,inlineToll,CASH_inlineToll,cnt)
+function beeLine_RI(startExitFacilityId,inlineToll,CASH_inlineToll,cnt)
+
+//line 9027 -9071
+//convert AxleFactor for regular, ticket system and bridge, based on number of axle
+function updateAxleData(bx);
+
+
+//line 9104- 9523
+//calculate toll for ticket system
+function calculateTicketToll(eFrom, eTo)
+function calculateTicketToll_RI(eFrom, eTo)
+function calcFullTicketToll_SP_RI(tToll)
+function calculateTicketToll_CASH(eFrom, eTo)
+function calculateTicketToll_CASH_RI(eFrom, eTo)
+
+
+			
+//line 9525-9611
+//determine which exits has electronic toll only
+function electronicOnly(formatCASHTotalToll)
+
+//line 9612 - 9692
+//calculate bridge toll
+function getBridgeToll(bridge)
+
+//line 9725
+//determine if use bridge toll, default is to call calculateToll()
+function getToll(tollPayment)
+
+				
+
+	
