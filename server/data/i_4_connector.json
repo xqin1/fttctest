@@ -1,0 +1,146 @@
+{
+    "routes": [
+        {
+            "name": "I-4 EB to Selmon Expressway EB",
+            "coordinates": {
+                "lat":27.964605,
+                "lon":-82.42715
+            },
+            "move": "Z-Move",
+            "exitNum":"2",
+            "exitNumber": "2",
+            "sunpassOnly": false,
+            "ticketSystem": false,
+            "tollByPlate": true,
+            "milePost": 1
+        },
+        {
+            "name": "I-4 WB to Selmon Expressway WB",
+            "coordinates": {
+                "lat":27.964562,
+                "lon":-82.424116},
+            "move": "S-Move",
+            "exitNum":"2",
+            "exitNumber": "2",
+            "sunpassOnly": false,
+            "ticketSystem": false,
+            "tollByPlate": true,
+            "milePost": 2
+        },
+        {
+            "name": "Selmon Expressway EB to I-4 EB",
+            "coordinates":  {
+                "lat":27.95226,
+                "lon":-82.428566},
+            "move": "S-Move",
+            "exitNum":"10",
+            "exitNumber": "10",
+            "sunpassOnly": false,
+            "ticketSystem": false,
+            "tollByPlate": true,
+            "milePost": 3
+        },
+        {
+            "name": "Selmon Expressway WB to I-4 WB",
+            "coordinates": {
+                "lat":27.953075,
+                "lon":-82.423987},
+            "move": "Z-Move",
+            "exitNum":"10",
+            "exitNumber": "10",
+            "sunpassOnly": false,
+            "ticketSystem": false,
+            "tollByPlate": true,
+            "milePost": 4
+        },
+        {
+            "name": "I-4 EB to Port (TRUCKS ONLY)",
+            "coordinates": {
+                "lat":27.964605,
+                "lon":-82.42715
+            },
+            "move": "T-Move",
+            "exitNum":"2",
+            "exitNumber": "2",
+            "sunpassOnly": false,
+            "ticketSystem": false,
+            "tollByPlate": true,
+            "milePost": 5
+        },
+        {
+            "name": "I-4 WB to Port (TRUCKS ONLY)",
+            "coordinates": {
+                "lat":27.964562,
+                "lon":-82.424116},
+            "move": "T-Move",
+            "exitNum":"2",
+            "exitNumber": "2",
+            "sunpassOnly": false,
+            "ticketSystem": false,
+            "tollByPlate": true,
+            "milePost": 6
+        },
+        {
+            "name": "Port to I-4 WB (TRUCKS ONLY)",
+            "coordinates":  {
+                "lat":27.94938,
+                "lon":-82.436984},
+            "move": "T-Move",
+            "exitNum":"",
+            "exitNumber": "",
+            "sunpassOnly": false,
+            "ticketSystem": false,
+            "tollByPlate": true,
+            "milePost": 7
+        },
+        {
+            "name": "Port to I-4 EB (TRUCKS ONLY)",
+            "coordinates":  {
+                "lat":27.94938,
+                "lon":-82.436984},
+            "move": "T-Move",
+            "exitNum":"",
+            "exitNumber": "",
+            "sunpassOnly": false,
+            "ticketSystem": false,
+            "tollByPlate": true,
+            "milePost": 8
+        }
+    ],
+
+    "rate_by_move": {
+        "S-Move": {
+            "sp": {
+                "rate": 1.02,
+                "additional_axle": 1.02
+            },
+            "cash": {
+                "rate": 1.27,
+                "additional_axle": 1.27
+
+            }
+        },
+        "Z-Move": {
+            "sp": {
+                "rate": 0.51,
+                "additional_axle": 0.51
+            },
+            "cash": {
+                "rate": 0.76,
+                "additional_axle": 0.76
+
+            }
+        },
+        "T-Move": {
+            "sp": {
+                "rate": 1.02,
+                "additional_axle": 0
+            },
+            "cash": {
+                "rate": 1.27,
+                "additional_axle": 0
+
+            }
+        }
+    }
+}

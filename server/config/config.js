@@ -10,7 +10,7 @@ module.exports = {
         app: {
             name: 'Florida Turnpike Toll Calculator'
         },
-        port: 3000,
+        port: 3001,
         ipaddress: '127.0.0.1',
         log: {
             filename: './logs/server.log',
@@ -25,7 +25,7 @@ module.exports = {
         app: {
             name: 'Florida Turnpike Toll Calculator'
         },
-        port: 3000,
+        port: 3001,
         ipaddress: '127.0.0.1',
         log: {
             filename: './logs/server.log',
